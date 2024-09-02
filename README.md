@@ -76,3 +76,75 @@ The result of the aggregation pipeline will be:
 The `$addFields` stage is an excellent way to enrich your documents with additional calculated data. Whether you're summing values, concatenating strings, or performing other transformations, `$addFields` provides a flexible and straightforward method to enhance your data in MongoDB.
 
 Encourage your students to experiment with different expressions and operators within `$addFields` to see how they can manipulate and analyze data directly in MongoDB.
+
+## <img src="https://user-images.githubusercontent.com/74038190/212257467-871d32b7-e401-42e8-a166-fcfd7baa4c6b.gif" width ="25" style="margin-bottom: -5px;"> Understanding MongoDB UTC Timezones and Moment.js
+
+### MongoDB and Timezones
+
+#### 1. Storing Timestamps in UTC
+MongoDB stores all date and time fields in UTC format by default. When you insert a date into MongoDB, it automatically converts the date to UTC, regardless of the server's local timezone.
+
+For example, if you insert a date as follows:
+
+```javascript
+db.timeTest.insertOne({ 
+    name: "Test Document", 
+    createdAt: new Date() 
+})
+```
+MongoDB will store the `createdAt` field in UTC. If your local server time was `2024-09-02 11:34:01 AM` in Lahore, Pakistan (UTC+5), MongoDB will store it as:
+```
+"createdAt": "2024-09-02T06:34:01.297Z"
+```
+Here, `Z` indicates that the time is in UTC.
+
+#### 2. Verifying UTC Storage
+You can verify that MongoDB stores time in UTC by inserting a date and then retrieving it. The retrieved time will be in UTC format.
+
+For example:
+```shell
+db.timeTest.find({ name: "Test Document" }).pretty()
+```
+Output:
+```json
+{
+    "_id" : ObjectId("64f2b530c47c8f128f5c85b3"),
+    "name" : "Test Document",
+    "createdAt" : ISODate("2024-09-02T06:34:01.297Z")
+}
+```
+This confirms that the date was stored in UTC.
+
+### Moment.js and Timezone Conversion
+
+#### 1. Introduction to Moment.js
+[Moment.js](https://momentjs.com/) is a popular JavaScript library for parsing, validating, manipulating, and formatting dates. With the `moment-timezone` extension, you can easily convert between different timezones.
+
+#### 2. Converting UTC to Local Time
+To convert a UTC timestamp stored in MongoDB to a local timezone, you can use Moment.js. Below is an example of how to convert UTC time to New Zealand's timezone:
+
+```javascript
+const moment = require('moment-timezone');
+
+const utcTime = "2024-09-02T06:34:01.297Z";
+const localTime = moment.utc(utcTime).tz("Pacific/Auckland").format("YYYY-MM-DD HH:mm:ss");
+
+console.log(localTime); // This will print the time in New Zealand's timezone
+```
+This code converts the UTC time to New Zealand Standard Time (NZST), accounting for timezone differences.
+
+#### 3. Formatting Dates
+Moment.js allows you to format dates in various ways. For example:
+```javascript
+const formattedDate = moment.utc(utcTime).tz("Pacific/Auckland").format("dddd, MMMM Do YYYY, h:mm:ss a");
+console.log(formattedDate); // Outputs: "Monday, September 2nd 2024, 6:34:01 pm"
+```
+This example shows how to display the date in a more human-readable format.
+
+### Conclusion
+Understanding how MongoDB stores time in UTC and how to work with these timestamps using Moment.js is crucial for building applications that operate across multiple timezones. By storing times in UTC, you ensure consistency, and by converting them to the user's local timezone, you provide a better user experience.
+
+### Further Reading
+- [Moment.js Documentation](https://momentjs.com/docs/)
+- [MongoDB Date Storage](https://docs.mongodb.com/manual/reference/method/Date/)
+- [Timezone Handling in Applications](https://en.wikipedia.org/wiki/Time_zone)
