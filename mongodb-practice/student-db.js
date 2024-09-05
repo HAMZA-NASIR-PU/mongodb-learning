@@ -93,3 +93,66 @@ db.scores.aggregate([
         }
     }
 ]);
+
+
+
+db.scores.drop();
+
+// How can I calculate the total score from multiple nested homework records in MongoDB?
+db.scores.insertMany([
+    {
+        _id: 1,
+        student: "Hamza",
+        homework: [
+            {
+                english: 50,
+            },
+            {
+                physics: 70,
+            },
+            {
+                chemistry: 80
+            }
+        ]
+    },
+    {
+        _id: 2,
+        student: "Raza",
+        homework: [
+            {
+                english: 60
+            },
+            {
+                physics: 30,
+            },
+            {
+                chemistry: 70
+            }
+        ]
+    }
+]);
+
+db.scores.aggregate([
+    {
+        $addFields: {
+            totalMarks: {
+                $reduce: {
+                    input: "$homework",        // The array of homework documents
+                    initialValue: 0,           // Starting value for the accumulator (initial sum is 0)
+                    in: {
+                        $add: [                // Add two values together: current sum and the sum of marks in the current homework document
+                            "$$value",         // $$value refers to the current accumulated sum
+                            {
+                                $reduce: {
+                                    input: { $objectToArray: "$$this" },  // Convert the homework document (e.g., {english: 50, physics: 70}) into an array
+                                    initialValue: 0,                      // Initial sum for this homework document
+                                    in: { $add: ["$$value", "$$this.v"] } // Add up all the values (marks) in the homework object
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]);
