@@ -191,6 +191,7 @@ db.scores.aggregate([
 // How do you check if all elements in an array meet a specific condition using MongoDB?
 // How can I compute conditional pass/fail status based on individual field values inside an array in MongoDB?
 // How do you validate if all subjects' marks in a MongoDB document are greater than or equal to a specific value?
+// How do you apply aggregation in MongoDB to check if values in an array of objects meet a certain threshold?
 db.scores.aggregate([
     {
         $addFields: {
