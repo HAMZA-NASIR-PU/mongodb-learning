@@ -98,7 +98,6 @@ db.scores.aggregate([
 
 db.scores.drop();
 
-// How can I calculate the total score from multiple nested homework records in MongoDB?
 db.scores.insertMany([
     {
         _id: 1,
@@ -129,9 +128,40 @@ db.scores.insertMany([
                 chemistry: 70
             }
         ]
+    },
+    {
+        _id: 3,
+        student: "Ali",
+        homework: [
+            {
+                english: 60
+            },
+            {
+                physics: 35,
+            },
+            {
+                chemistry: 70
+            }
+        ]
+    },
+    {
+        _id: 4,
+        student: "Fareed",
+        homework: [
+            {
+                english: 60
+            },
+            {
+                physics: 45,
+            },
+            {
+                chemistry: 70
+            }
+        ]
     }
 ]);
 
+// How can I calculate the total score from multiple nested homework records in MongoDB?
 db.scores.aggregate([
     {
         $addFields: {
@@ -151,6 +181,43 @@ db.scores.aggregate([
                             }
                         ]
                     }
+                }
+            }
+        }
+    }
+]);
+
+
+// How do you check if all elements in an array meet a specific condition using MongoDB?
+// How can I compute conditional pass/fail status based on individual field values inside an array in MongoDB?
+// How do you validate if all subjects' marks in a MongoDB document are greater than or equal to a specific value?
+db.scores.aggregate([
+    {
+        $addFields: {
+            status: {
+                $cond: {
+                    if: {
+                        $allElementsTrue: {
+                            $map: {
+                                input: "$homework",
+                                as: "subject",
+                                in: {
+                                    $gte: [
+                                        {
+                                            $reduce: {
+                                                input: { $objectToArray: "$$subject" }, // { english: 60 } ==> [{k:english},{v:60}]
+                                                initialValue: 0,
+                                                in: { $sum: ["$$value", "$$this.v"] } //$$this.v ==> 60
+                                            }
+                                        },
+                                        33
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    then: "Pass",
+                    else: "Fail"
                 }
             }
         }
