@@ -224,3 +224,23 @@ db.scores.aggregate([
         }
     }
 ]);
+
+
+db.scores.aggregate([
+    {
+        $project: {
+            marks:
+            {
+                $map: {
+                    input: "$homework",
+                    as: "subject",
+                    in: { $objectToArray: "$$subject" }
+                }
+            }
+        }
+
+    },
+    {
+        $limit: 1
+    }
+]);
