@@ -93,3 +93,154 @@ db.scores.aggregate([
         }
     }
 ]);
+
+
+
+db.scores.drop();
+
+db.scores.insertMany([
+    {
+        _id: 1,
+        student: "Hamza",
+        homework: [
+            {
+                english: 50,
+            },
+            {
+                physics: 70,
+            },
+            {
+                chemistry: 80
+            }
+        ]
+    },
+    {
+        _id: 2,
+        student: "Raza",
+        homework: [
+            {
+                english: 60
+            },
+            {
+                physics: 30,
+            },
+            {
+                chemistry: 70
+            }
+        ]
+    },
+    {
+        _id: 3,
+        student: "Ali",
+        homework: [
+            {
+                english: 60
+            },
+            {
+                physics: 35,
+            },
+            {
+                chemistry: 70
+            }
+        ]
+    },
+    {
+        _id: 4,
+        student: "Fareed",
+        homework: [
+            {
+                english: 60
+            },
+            {
+                physics: 45,
+            },
+            {
+                chemistry: 70
+            }
+        ]
+    }
+]);
+
+// How can I calculate the total score from multiple nested homework records in MongoDB?
+db.scores.aggregate([
+    {
+        $addFields: {
+            totalMarks: {
+                $reduce: {
+                    input: "$homework",        // The array of homework documents
+                    initialValue: 0,           // Starting value for the accumulator (initial sum is 0)
+                    in: {
+                        $add: [                // Add two values together: current sum and the sum of marks in the current homework document
+                            "$$value",         // $$value refers to the current accumulated sum
+                            {
+                                $reduce: {
+                                    input: { $objectToArray: "$$this" },  // Convert the homework document (e.g., {english: 50, physics: 70}) into an array
+                                    initialValue: 0,                      // Initial sum for this homework document
+                                    in: { $add: ["$$value", "$$this.v"] } // Add up all the values (marks) in the homework object
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]);
+
+
+// How do you check if all elements in an array meet a specific condition using MongoDB?
+// How can I compute conditional pass/fail status based on individual field values inside an array in MongoDB?
+// How do you validate if all subjects' marks in a MongoDB document are greater than or equal to a specific value?
+// How do you apply aggregation in MongoDB to check if values in an array of objects meet a certain threshold?
+db.scores.aggregate([
+    {
+        $addFields: {
+            status: {
+                $cond: {
+                    if: {
+                        $allElementsTrue: {
+                            $map: {
+                                input: "$homework",
+                                as: "subject",
+                                in: {
+                                    $gte: [
+                                        {
+                                            $reduce: {
+                                                input: { $objectToArray: "$$subject" }, // { english: 60 } ==> [{k:english},{v:60}]
+                                                initialValue: 0,
+                                                in: { $sum: ["$$value", "$$this.v"] } //$$this.v ==> 60
+                                            }
+                                        },
+                                        33
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    then: "Pass",
+                    else: "Fail"
+                }
+            }
+        }
+    }
+]);
+
+
+db.scores.aggregate([
+    {
+        $project: {
+            marks:
+            {
+                $map: {
+                    input: "$homework",
+                    as: "subject",
+                    in: { $objectToArray: "$$subject" }
+                }
+            }
+        }
+
+    },
+    {
+        $limit: 1
+    }
+]);

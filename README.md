@@ -148,3 +148,98 @@ Understanding how MongoDB stores time in UTC and how to work with these timestam
 - [Moment.js Documentation](https://momentjs.com/docs/)
 - [MongoDB Date Storage](https://docs.mongodb.com/manual/reference/method/Date/)
 - [Timezone Handling in Applications](https://en.wikipedia.org/wiki/Time_zone)
+
+
+## <img src="https://user-images.githubusercontent.com/74038190/212257467-871d32b7-e401-42e8-a166-fcfd7baa4c6b.gif" width ="25" style="margin-bottom: -5px;"> What is `$$this` in aggregation pipeline ?
+
+
+ MongoDB's aggregation framework, $`$this` is a system variable that refers to the current element being processed in an array. It's commonly used in operators like `$map` and `$reduce` when you need to iterate over an array and perform some operation on each element.
+
+ ### Key Points About `$$this`
+
+ - `Inside $reduce and $map`: When you use `$reduce` or `$map`, MongoDB processes each element of the array one by one. The variable `$$this` refers to the current element of the array during each iteration.
+
+ - `Dynamic Reference`: It's a dynamic reference that updates as the array is iterated. So, for each step in the iteration, `$$this` refers to the array element that is being worked on.
+
+- `Used in Transformation`: In array transformation operators (e.g., `$map`, `$reduce`), you can apply transformations, filters, or calculations to the array elements using `$$this`.
+
+### Example 
+
+```javascript
+{
+    _id: 1,
+    student: "Hamza",
+    homework: [
+        { english: 50, physics: 70 },
+        { chemistry: 80, math: 90 }
+    ]
+}
+```
+
+If you wanted to iterate over each homework object and refer to the current element in the array, you can use `$$this`.
+
+#### Example with `$map`
+
+
+```javascript
+db.scores.aggregate([
+    {
+        $project: {
+            subjects: {
+                $map: {
+                    input: "$homework",  // This is the array being iterated
+                    as: "subject",       // "subject" will represent each element in the array
+                    in: "$$this"         // $$this refers to the current element in the array
+                }
+            }
+        }
+    }
+])
+```
+
+In this case, $$this would refer to each homework object in the array. For example:
+
+- First iteration: $$this would be `{ english: 50, physics: 70 }`
+- Second iteration: $$this would be `{ chemistry: 80, math: 90 }`
+
+#### Example with `$reduce`
+
+When using $reduce, $$this is used in the same way to refer to the current element being processed:
+
+
+```javascript
+db.scores.aggregate([
+    {
+        $addFields: {
+            totalMarks: {
+                $reduce: {
+                    input: "$homework",
+                    initialValue: 0,
+                    in: { 
+                        $add: [
+                            "$$value", // The accumulated value
+                            { 
+                                $reduce: { 
+                                    input: { $objectToArray: "$$this" }, // $$this refers to the current homework object
+                                    initialValue: 0,
+                                    in: { $add: ["$$value", "$$this.v"] } // $$this.v refers to the value in the key-value pair
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+])
+```
+
+In this example:
+
+- In the outer `$reduce`, `$$this` refers to each element in the homework array.
+- In the inner `$reduce`, `$$this.v` refers to the value of each key-value pair (e.g., 50 for english, 70 for physics).
+
+### Summary
+
+- `$$this` represents the current element in the array being processed.
+- It's used inside array operators like `$map` and `$reduce` to dynamically refer to each array element during the iteration.
