@@ -208,3 +208,7 @@ db.inventory.aggregate(
         }
     }
 );
+
+
+// Write an aggregation query to convert event dates to their respective local time zones. For example, 
+//convert the date to "America/New_York" for events in New York.

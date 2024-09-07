@@ -153,7 +153,7 @@ db.students.aggregate([
     {
         $project: {
             name: 1,
-            "scores.math":1,
+            "scores.math": 1,
             passedMath: {
                 $cond: {
                     if: { $gt: ["$scores.math", 60] }, then: true, else: false
@@ -213,3 +213,162 @@ db.students.aggregate([
 
 
 
+
+db.students.insertMany([
+    {
+        _id: 1,
+        name: "Alice",
+        courses: [
+            { name: "Math", marks: 75, type: "regular" },
+            { name: "Physics", marks: 85, type: "regular" },
+            { name: "Chemistry", marks: 65, type: "regular" },
+            { name: "Bonus Math", marks: 95, type: "bonus" }
+        ]
+    },
+    {
+        _id: 2,
+        name: "Bob",
+        courses: [
+            { name: "Math", marks: 60, type: "regular" },
+            { name: "Physics", marks: 55, type: "regular" },
+            { name: "Chemistry", marks: 80, type: "regular" }
+        ]
+    }
+]);
+
+
+
+//For each student, determine if they qualify for a 'Scholarship'
+//. A student qualifies if they have completed at least three 
+//regular courses with marks greater than 70 and have completed 
+//at least one 'bonus' course.
+
+//If they qualify, assign the status 'Scholarship', otherwise 'No Scholarship'. Also, return the total number of regular and bonus courses completed. Use appropriate MongoDB aggregation operators for this task."
+
+// Solution # 1
+db.students.aggregate([
+    {
+        $addFields: {
+            qualifiedRegularSubjectsCount: {
+                $reduce: {
+                    input: "$courses",
+                    initialValue: 0,
+                    in: {
+                        $cond: {
+                            if: {
+                                $and: [
+                                    {
+                                        $gt: ["$$this.marks", 70]
+                                    }, {
+                                        $eq: ["$$this.type", "regular"]
+                                    }
+                                ],
+                            },
+                            then: { $sum: ["$$value", 1] },
+                            else: { $sum: ["$$value", 0] }
+                        }
+                    }
+                }
+            },
+
+            qualifiedBonusSubjectCount: {
+                $reduce: {
+                    input: "$courses",
+                    initialValue: 0,
+                    in: {
+                        $cond: {
+                            if: {
+                                $and: [
+                                    {
+                                        $gt: ["$$this.marks", 70]
+                                    }, {
+                                        $eq: ["$$this.type", "bonus"]
+                                    }
+                                ],
+                            },
+                            then: { $sum: ["$$value", 1] },
+                            else: { $sum: ["$$value", 0] }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    {
+        $addFields: {
+            status: {
+                $cond: {
+                    if: {
+                        $and: [
+                            { $gte: ["$qualifiedRegularSubjectsCount", 3] },
+                            { $gte: ["$qualifiedBonusSubjectCount", 1] }
+                        ]
+                    },
+                    then: "Scholarship",
+                    else: "No Scholarship"
+                }
+            }
+        }
+    }
+]);
+
+
+// Solution # 2
+db.students.aggregate([
+    {
+        $addFields: {
+            qualifiedRegularSubjects: {
+                $filter: {
+                    input: "$courses",
+                    as: "course",
+                    cond: {
+                        $and: [
+                            { $eq: ["$$course.type", "regular"] },
+                            { $gt: ["$$course.marks", 70] }
+                        ]
+                    }
+                }
+            },
+            qualifiedBonusSubjects: {
+                $filter: {
+                    input: "$courses",
+                    as: "course",
+                    cond: {
+                        $and: [
+                            { $eq: ["$$course.type", "bonus"] },
+                            { $gt: ["$$course.marks", 70] }
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    {
+        $addFields: {
+            qualifiedRegularSubjectsCount: { $size: "$qualifiedRegularSubjects" },
+            qualifiedBonusSubjectsCount: { $size: "$qualifiedBonusSubjects" }
+        }
+    },
+    {
+        $addFields: {
+            status: {
+                $cond: {
+                    if: {
+                        $and: [
+                            { $gte: ["$qualifiedRegularSubjectsCount", 3] },
+                            { $gte: ["$qualifiedBonusSubjectsCount", 1] }
+                        ]
+                    },
+                    then: "Scholarship",
+                    else: "No Scholarship"
+                }
+            }
+        }
+    },
+    {
+        $project: {
+            qualifiedRegularSubjects: 0,
+            qualifiedBonusSubjects: 0
+        }
+    }
+]);
