@@ -170,3 +170,41 @@ db.events.aggregate([
 
 
 
+//Write a query to find all events that are scheduled within the 
+//next 30 days from today.
+
+db.events.find({
+    date: {
+        $gte: new Date(),  // Current date
+        $lte: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000)  // 30 days from now
+    }
+});
+
+
+db.events.aggregate([
+    {
+        $match: {
+            date: {
+                $gte: new Date(),
+                $lte: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000)
+            }
+        }
+    },
+    {
+        $sort: { date: 1 }  // Sort by event date in ascending order
+    }
+]);
+
+
+
+
+db.inventory.aggregate(
+    {
+        $match: {
+            expireDate: {
+                $gte: new Date(),
+                $lte: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000)
+            }
+        }
+    }
+);
