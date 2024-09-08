@@ -233,6 +233,16 @@ db.students.insertMany([
             { name: "Physics", marks: 55, type: "regular" },
             { name: "Chemistry", marks: 80, type: "regular" }
         ]
+    },
+    {
+        _id: 3,
+        name: "Michael",
+        courses: [
+            { name: "Math", marks: 77, type: "regular" },
+            { name: "Physics", marks: 85, type: "regular" },
+            { name: "Chemistry", marks: 80, type: "regular" },
+            { name: "History", marks: 80, type: "bonus" }
+        ]
     }
 ]);
 
