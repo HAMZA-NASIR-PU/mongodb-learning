@@ -148,3 +148,38 @@ db.scores.aggregate([
         }
     }
 ]);
+
+
+db.scores.aggregate([
+    {
+        $addFields: {
+            statuc: {
+                $cond: {
+                    if: {
+                        $allElementsTrue: {
+                            $map: {
+                                input: "$homework",
+                                as: "subject",
+                                in: {
+                                    $gte: [{
+                                        $reduce: {
+                                            input: {
+                                                $objectToArray: "$$subject",
+                                            },
+                                            initialValue: 0,
+                                            in: {
+                                                $add: ["$$value", "$$this.v"]
+                                            }
+                                        }
+                                    }, 33]
+                                }
+                            }
+                        }
+                    },
+                    then: "Pass",
+                    else: "Fail"
+                }
+            }
+        }
+    }
+]);
