@@ -244,3 +244,120 @@ db.scores.aggregate([
         $limit: 1
     }
 ]);
+
+
+db.students.drop();
+
+
+
+//You have a students collection where each student has an array of exams. Each exam contains a subject and score. Write a MongoDB query to calculate the average score of each student across all exams using the $let operator, and return the student name along with their average score in the output.
+
+db.students.insertMany([
+    {
+        "_id": 1,
+        "name": "Alice",
+        "exams": [
+            { "subject": "Math", "score": 85 },
+            { "subject": "English", "score": 78 },
+            { "subject": "Science", "score": 92 }
+        ]
+    },
+    {
+        "_id": 2,
+        "name": "Bob",
+        "exams": [
+            { "subject": "Math", "score": 90 },
+            { "subject": "English", "score": 88 },
+            { "subject": "History", "score": 75 }
+        ]
+    },
+    {
+        "_id": 3,
+        "name": "Charlie",
+        "exams": [
+            { "subject": "Math", "score": 70 },
+            { "subject": "English", "score": 85 },
+            { "subject": "Science", "score": 80 }
+        ]
+    }
+]);
+
+
+
+db.students.aggregate([
+    {
+        $addFields: {
+            averageScore: {
+                $let: {
+                    vars: {
+                        totalMarks: {
+                            $reduce: {
+                                input: "$exams",
+                                initialValue: 0,
+                                in: {
+                                    $add: ["$$value", "$$this.score"]
+                                }
+                            }
+                        },
+                        totalSubjects: {
+                            $size: "$exams"
+                        }
+                    },
+                    in: {
+                        $cond: {
+                            if: {
+                                $gt: ["$$totalSubjects", 0]
+                            },
+                            then: { $divide: ["$$totalMarks", "$$totalSubjects"] },
+                            else: null
+                        }
+                    }
+                }
+            }
+        }
+    }
+]);
+
+
+db.students.aggregate([
+    {
+      $project: {
+        name: 1,
+        averageScore: {
+          $let: {
+            vars: {
+              totalMarks: {
+                $reduce: {
+                  input: "$exams",
+                  initialValue: 0,
+                  in: {
+                    $add: ["$$value", "$$this.score"]
+                  }
+                }
+              },
+              totalSubjects: { $size: "$exams" }
+            },
+            in: {
+              $cond: {
+                if: { $gt: ["$$totalSubjects", 0] },
+                then: { $divide: ["$$totalMarks", "$$totalSubjects"] },
+                else: null
+              }
+            }
+          }
+        }
+      }
+    }
+  ]);
+  
+
+
+db.students.aggregate([
+    {
+        $addFields: {
+            total: {
+                $sum: "$exams.score"
+            }
+        }
+    }
+]);
