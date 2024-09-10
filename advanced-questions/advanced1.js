@@ -223,4 +223,75 @@ db.students.aggregate([
 
 
 
-//-----------------------------------------------------------------
+// Question 4
+
+
+db.products.insertMany([
+    {
+        "_id": 1,
+        "name": "Smartphone",
+        "price": 500,
+        "categories": ["electronics", "mobile"],
+        "discount": { "percentage": 10 },
+        "sales": 150
+    },
+    {
+        "_id": 2,
+        "name": "Laptop",
+        "price": 1200,
+        "categories": ["electronics", "computers"],
+        "discount": { "percentage": 15 },
+        "sales": 200
+    },
+    {
+        "_id": 3,
+        "name": "Vacuum Cleaner",
+        "price": 300,
+        "categories": ["home appliances"],
+        "sales": 50
+    },
+    {
+        "_id": 4,
+        "name": "Washing Machine",
+        "price": 700,
+        "categories": ["home appliances", "electronics"],
+        "discount": { "percentage": 5 },
+        "sales": 80
+    }
+]);
+
+
+
+db.products.aggregate([
+    {
+        $match: {
+            $expr: {
+                $in: ["electronics", "$categories"] // Match products in the "electronics" category
+            }
+        }
+    },
+    {
+        $addFields: {
+            discountedPrice: {
+                $cond: {
+                    if: { $gt: [{ $ifNull: ["$discount.percentage", 0] }, 0] }, // Check if discount is present
+                    then: { 
+                        $subtract: [
+                            "$price", 
+                            { $multiply: ["$price", { $divide: ["$discount.percentage", 100] }] } // Apply discount
+                        ] 
+                    },
+                    else: "$price" // If no discount, keep the original price
+                }
+            }
+        }
+    },
+    {
+        $project: {
+            name: 1,
+            price: 1,
+            discount: "$discount.percentage",
+            discountedPrice: 1
+        }
+    }
+]);

@@ -321,35 +321,35 @@ db.students.aggregate([
 
 db.students.aggregate([
     {
-      $project: {
-        name: 1,
-        averageScore: {
-          $let: {
-            vars: {
-              totalMarks: {
-                $reduce: {
-                  input: "$exams",
-                  initialValue: 0,
-                  in: {
-                    $add: ["$$value", "$$this.score"]
-                  }
+        $project: {
+            name: 1,
+            averageScore: {
+                $let: {
+                    vars: {
+                        totalMarks: {
+                            $reduce: {
+                                input: "$exams",
+                                initialValue: 0,
+                                in: {
+                                    $add: ["$$value", "$$this.score"]
+                                }
+                            }
+                        },
+                        totalSubjects: { $size: "$exams" }
+                    },
+                    in: {
+                        $cond: {
+                            if: { $gt: ["$$totalSubjects", 0] },
+                            then: { $divide: ["$$totalMarks", "$$totalSubjects"] },
+                            else: null
+                        }
+                    }
                 }
-              },
-              totalSubjects: { $size: "$exams" }
-            },
-            in: {
-              $cond: {
-                if: { $gt: ["$$totalSubjects", 0] },
-                then: { $divide: ["$$totalMarks", "$$totalSubjects"] },
-                else: null
-              }
             }
-          }
         }
-      }
     }
-  ]);
-  
+]);
+
 
 
 db.students.aggregate([
@@ -357,6 +357,32 @@ db.students.aggregate([
         $addFields: {
             total: {
                 $sum: "$exams.score"
+            }
+        }
+    }
+]);
+
+
+
+
+// problem for understanding $reduce aggregation operator
+db.events.aggregate([
+    {
+        $group: {
+            _id: "$experimentId",
+            probabilityArr: { $push: "$probability" }
+        }
+    },
+    {
+        $addFields: {
+            probability: {
+                $reduce: {
+                    input: "$probabilityArr",
+                    initialValue: 1,
+                    in: {
+                        $multiple: ["$$value", "$$this"]
+                    }
+                }
             }
         }
     }
