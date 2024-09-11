@@ -295,3 +295,35 @@ db.products.aggregate([
         }
     }
 ]);
+
+
+// Question 5
+
+db.userLogs.insertMany([
+    { userId: 1, eventType: "login", timestamp: new Date("2023-09-01T08:00:00Z") },
+    { userId: 1, eventType: "viewPage", timestamp: new Date("2023-09-01T08:15:00Z") },
+    { userId: 1, eventType: "viewPage", timestamp: new Date("2023-09-01T08:20:00Z") },
+    { userId: 1, eventType: "logout", timestamp: new Date("2023-09-01T09:00:00Z") },
+    { userId: 1, eventType: "login", timestamp: new Date("2023-09-02T10:00:00Z") },
+    { userId: 1, eventType: "viewPage", timestamp: new Date("2023-09-02T10:30:00Z") },
+    { userId: 1, eventType: "logout", timestamp: new Date("2023-09-02T11:00:00Z") },
+    { userId: 2, eventType: "login", timestamp: new Date("2023-09-01T08:00:00Z") },
+    { userId: 2, eventType: "viewPage", timestamp: new Date("2023-09-01T08:20:00Z") },
+    { userId: 2, eventType: "logout", timestamp: new Date("2023-09-01T09:00:00Z") }
+]);
+
+db.userLogs.aggregate([
+    {
+        $sort: { userId: 1, timestamp: 1 } // Sort events by userId and timestamp
+    },
+    {
+        $group: {
+            _id: {
+                userId: "$userId",
+                eventType: "$eventType"
+            },
+            events: { $push: "$$ROOT" } // Group events by userId and eventType
+        }
+    },
+    // Further stages will go here for session extraction, duration, and page views
+]);
