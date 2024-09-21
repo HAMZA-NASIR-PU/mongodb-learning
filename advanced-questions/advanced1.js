@@ -275,11 +275,11 @@ db.products.aggregate([
             discountedPrice: {
                 $cond: {
                     if: { $gt: [{ $ifNull: ["$discount.percentage", 0] }, 0] }, // Check if discount is present
-                    then: { 
+                    then: {
                         $subtract: [
-                            "$price", 
+                            "$price",
                             { $multiply: ["$price", { $divide: ["$discount.percentage", 100] }] } // Apply discount
-                        ] 
+                        ]
                     },
                     else: "$price" // If no discount, keep the original price
                 }
