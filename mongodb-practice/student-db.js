@@ -99,6 +99,37 @@ db.scores.aggregate([
 db.scores.drop();
 
 db.scores.insertMany([
+  {
+    _id: 1,
+    name: "Alice",
+    scores: [
+      { subject: "Math", value: 80 },
+      { subject: "English", value: 65 },
+      { subject: "Science", value: 90 },
+    ],
+  },
+]);
+
+db.scores.aggregate([
+  {
+    $project: {
+      name: 1,
+      passingCount: {
+        $size: {
+          $filter: {
+            input: "$scores",
+            as: "score",
+            cond: { $gte: ["$$score.value", 70] },
+          },
+        },
+      },
+    },
+  },
+]);
+
+db.scores.drop();
+
+db.scores.insertMany([
     {
         _id: 1,
         student: "Hamza",
