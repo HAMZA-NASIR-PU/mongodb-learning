@@ -237,7 +237,7 @@ db.scores.aggregate([
                                     $gte: [
                                         {
                                             $reduce: {
-                                                input: { $objectToArray: "$$subject" }, // { english: 60 } ==> [{k:english},{v:60}]
+                                                input: { $objectToArray: "$$subject" }, // { english: 60 } ==> [{k:english , v:60}]
                                                 initialValue: 0,
                                                 in: { $sum: ["$$value", "$$this.v"] } //$$this.v ==> 60
                                             }
