@@ -257,6 +257,37 @@ db.scores.aggregate([
 ]);
 
 
+// Solution no. 2
+
+db.scores.aggregate([
+  {
+    $addFields: {
+      isPass: {
+        $allElementsTrue: {
+          $map: {
+            input: "$homework",
+            as: "subject",
+            in: {
+              $gte: [
+                {
+                  $getField: {
+                    field: "v",
+                    input: {
+                      $arrayElemAt: [{ $objectToArray: "$$subject" }, 0],
+                    },
+                  },
+                },
+                33,
+              ],
+            },
+          },
+        },
+      },
+    },
+  },
+]);
+
+
 db.scores.aggregate([
     {
         $project: {
