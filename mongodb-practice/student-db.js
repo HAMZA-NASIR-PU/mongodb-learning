@@ -218,6 +218,32 @@ db.scores.aggregate([
     }
 ]);
 
+// Solution no.2 
+
+db.scores.aggregate([
+    {
+        $project: {
+            student: 1,
+            homeworkTotal: {
+                $reduce: {
+                    input: "$homework",
+                    initialValue: 0,
+                    in: {
+                        $add: ["$$value", {
+                            $getField: {
+                                field: "v",
+                                input: {
+                                    $arrayElemAt: [{ $objectToArray: "$$this" }, 0]
+                                }
+                            }
+                        }],
+                    }
+                }
+            }
+        }
+    }
+]);
+
 
 // How do you check if all elements in an array meet a specific condition using MongoDB?
 // How can I compute conditional pass/fail status based on individual field values inside an array in MongoDB?
