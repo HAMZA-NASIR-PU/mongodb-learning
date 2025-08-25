@@ -475,3 +475,49 @@ db.events.aggregate([
         }
     }
 ]);
+
+db.scores.drop();
+
+db.scores.insertMany([
+  { name: "Alice", scores: [80, 95, 70] },
+  { name: "Bob", scores: [60, 75, 85] },
+]);
+
+// We want to:
+
+// Traverse each student’s scores.
+
+// For each score, calculate:
+
+// Percentage (score / 100)
+
+// Pass/Fail (score >= 70)
+
+// Return all transformed scores in an array.
+
+db.scores.aggregate([
+  {
+    $project: {
+      name: 1,
+      detailedScores: {
+        $map: {
+          input: "$scores",
+          as: "s",
+          in: {
+            $let: {
+              vars: {
+                percentage: { $divide: ["$$s", 100] },
+                passed: { $gte: ["$$s", 70] },
+              },
+              in: {
+                score: "$$s",
+                percentage: "$$percentage",
+                passed: "$$passed",
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+]);
