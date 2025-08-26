@@ -438,6 +438,29 @@ db.students.aggregate([
     }
 ]);
 
+// Solution no. 2 without using $reduce aggregation operator.
+db.students.aggregate([
+  {
+    $project: {
+      name: 1,
+      averageScore: {
+        $let: {
+          vars: {
+            totalScore: {
+              $sum: "$exams.score",
+            },
+            totalSubjects: {
+              $size: "$exams",
+            },
+          },
+          in: {
+            $divide: ["$$totalScore", "$$totalSubjects"],
+          },
+        },
+      },
+    },
+  },
+]);
 
 
 db.students.aggregate([
