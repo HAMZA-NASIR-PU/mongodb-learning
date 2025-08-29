@@ -127,6 +127,38 @@ db.scores.aggregate([
   },
 ]);
 
+db.scores.aggregate([
+  {
+    $project: {
+      name: 1,
+      passedFailed: {
+        $let: {
+          vars: {
+            passed: {
+              $filter: {
+                input: "$scores",
+                as: "score",
+                cond: { $gte: ["$$score.value", 70] },
+              },
+            },
+            failed: {
+              $filter: {
+                input: "$scores",
+                as: "score",
+                cond: { $lt: ["$$score.value", 70] },
+              },
+            },
+          },
+          in: {
+            passingCount: { $size: "$$passed" },
+            failingCount: { $size: "$$failed" },
+          },
+        },
+      },
+    },
+  },
+]);
+
 db.scores.drop();
 
 db.scores.insertMany([
