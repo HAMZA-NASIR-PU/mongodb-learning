@@ -237,7 +237,7 @@ db.scores.aggregate([
                             "$$value",         // $$value refers to the current accumulated sum
                             {
                                 $reduce: {
-                                    input: { $objectToArray: "$$this" },  // Convert the homework document (e.g., {english: 50, physics: 70}) into an array
+                                    input: { $objectToArray: "$$this" },  // Convert the homework document (e.g., {english: 50}) into an array ([{k: 'english', v: 50}])
                                     initialValue: 0,                      // Initial sum for this homework document
                                     in: { $add: ["$$value", "$$this.v"] } // Add up all the values (marks) in the homework object
                                 }
