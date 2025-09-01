@@ -127,6 +127,7 @@ db.scores.aggregate([
   },
 ]);
 
+// Get the count of all passed and failed subjects.
 db.scores.aggregate([
   {
     $project: {
