@@ -506,32 +506,6 @@ db.students.aggregate([
     }
 ]);
 
-
-
-
-// problem for understanding $reduce aggregation operator
-db.events.aggregate([
-    {
-        $group: {
-            _id: "$experimentId",
-            probabilityArr: { $push: "$probability" }
-        }
-    },
-    {
-        $addFields: {
-            probability: {
-                $reduce: {
-                    input: "$probabilityArr",
-                    initialValue: 1,
-                    in: {
-                        $multiple: ["$$value", "$$this"]
-                    }
-                }
-            }
-        }
-    }
-]);
-
 db.scores.drop();
 
 db.scores.insertMany([
