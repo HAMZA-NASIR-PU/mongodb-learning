@@ -212,3 +212,27 @@ db.inventory.aggregate(
 
 // Write an aggregation query to convert event dates to their respective local time zones. For example, 
 //convert the date to "America/New_York" for events in New York.
+
+
+// problem for understanding $reduce aggregation operator
+db.events.aggregate([
+  {
+    $group: {
+      _id: "$experimentId",
+      probabilityArr: { $push: "$probability" },
+    },
+  },
+  {
+    $addFields: {
+      probability: {
+        $reduce: {
+          input: "$probabilityArr",
+          initialValue: 1,
+          in: {
+            $multiple: ["$$value", "$$this"],
+          },
+        },
+      },
+    },
+  },
+]);
