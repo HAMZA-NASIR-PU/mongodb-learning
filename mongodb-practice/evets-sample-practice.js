@@ -33,6 +33,42 @@ db.events.aggregate([
     }
 ]);
 
+// Question: Write a query to find all events that occur in 2024 in month of March.
+
+db.events.find({
+  date: {
+    $gte: ISODate("2024-03-01T00:00:00Z"),
+    $lt: ISODate("2024-04-01T00:00:00Z"),
+  },
+});
+
+// If you want to filter dynamically by month & year (without hardcoding ranges):
+// Same result, but this approach is more flexible (useful for dashboards / reporting).
+
+let userYear = 2024;
+let userMonth = 3;
+db.events.aggregate([
+  {
+    $match: {
+      $expr: {
+        $and: [
+          userYear ? { $eq: [{ $year: "$date" }, userYear] } : true,
+          userMonth ? { $eq: [{ $month: "$date" }, userMonth] } : true,
+        ],
+      },
+    },
+  },
+]);
+
+db.events.find({
+  $expr: {
+    $and: [
+      { $eq: [{ $year: "$date" }, 2024] },
+      { $eq: [{ $month: "$date" }, 3] },
+    ],
+  },
+});
+
 
 db.events.find({
     $expr: {
