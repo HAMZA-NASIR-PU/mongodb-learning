@@ -551,3 +551,30 @@ db.scores.aggregate([
     },
   },
 ]);
+
+// Solution # 2
+
+db.scores.aggregate([
+  {
+    $project: {
+      name: 1,
+      scores: {
+        $map: {
+          input: "$scores",
+          as: "s",
+          in: {
+            score: "$$s",
+            percentage: { $divide: ["$$s", 100] },
+            status: {
+              $cond: {
+                if: { $gte: ["$$s", 70] },
+                then: "Pass",
+                else: "Fail",
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+]);
