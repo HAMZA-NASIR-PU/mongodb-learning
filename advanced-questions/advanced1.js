@@ -10,6 +10,102 @@ db.employees.insertMany([
     { employeeId: 9, department: "Engineering", monthlySales: 11000 }
 ]);
 
+// Query to find the maximum sales.
+db.employees.find().sort({ monthlySales: -1 }).limit(1);
+
+// Via aggregation pipeline:
+db.employees.aggregate([
+  {
+    $sort: {
+      monthlySales: -1,
+    },
+  },
+  {
+    $limit: 1,
+  },
+]);
+
+// 🔑 Hints for Question 1
+
+// Partition the data by department
+
+// You need to compare employees only within the same department.
+
+// In MongoDB, this is done with partitionBy inside $setWindowFields.
+
+// Sort employees by sales
+
+// Ranking requires ordering employees by monthlySales.
+
+// Use sortBy: { monthlySales: -1 } so the highest sales come first.
+
+// Assign ranks
+
+// MongoDB window functions ($rank, $denseRank, $rowNumber) are perfect here.
+
+// Use $rank to give 1 to the top salesperson in each department.
+
+// Project clean output
+
+// After ranking, you probably only want fields:
+// employeeId, department, monthlySales, rank.
+
+// Use $project to hide _id and unnecessary fields.
+
+// ⚡ Think of it step by step:
+
+// Step 1: Group by department (logical grouping using partition).
+
+// Step 2: Sort employees within that group by sales descending.
+
+// Step 3: Apply a ranking function to assign position.
+
+db.employees.aggregate([
+  {
+    $group: {
+      _id: "$department",
+      count: { $sum: 1 },
+    },
+  },
+]);
+
+db.employees.aggregate([
+  {
+    $group: {
+      _id: "$department",
+      data: { $push: "$$ROOT" },
+    },
+  },
+]);
+
+db.employees.aggregate([
+  {
+    $group: {
+      _id: "$department",
+      data: { $push: "$$ROOT" },
+    },
+  },
+  {
+    $project: {
+      _id: 1,
+      data: 1,
+      maxMonthlySalary: {
+        $reduce: {
+          input: "$data",
+          initialValue: 0,
+          in: {
+            $cond: {
+              if: { $gt: ["$$this.monthlySales", "$$value"] },
+              then: "$$this.monthlySales",
+              else: "$$value",
+            },
+          },
+        },
+      },
+    },
+  },
+]);
+
 
 // Question 1
 
