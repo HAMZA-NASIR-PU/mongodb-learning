@@ -41,12 +41,6 @@ You are working with an **e-commerce database**. The `orders` collection stores 
 
 ---
 
-
-Great 👍 let’s prepare some **dummy order data** for the ranking question.
-We’ll include multiple customers, multiple months, and some ties to see how `$rank` behaves.
-
----
-
 ### 📌 Dummy Data
 
 ```js
