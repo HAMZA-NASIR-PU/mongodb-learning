@@ -1,13 +1,13 @@
 db.employees.insertMany([
-    { employeeId: 1, department: "Sales", monthlySales: 5000 },
-    { employeeId: 2, department: "Sales", monthlySales: 7000 },
-    { employeeId: 3, department: "Sales", monthlySales: 6000 },
-    { employeeId: 4, department: "HR", monthlySales: 2000 },
-    { employeeId: 5, department: "HR", monthlySales: 3000 },
-    { employeeId: 6, department: "HR", monthlySales: 2500 },
-    { employeeId: 7, department: "Engineering", monthlySales: 10000 },
-    { employeeId: 8, department: "Engineering", monthlySales: 12000 },
-    { employeeId: 9, department: "Engineering", monthlySales: 11000 }
+  { employeeId: 1, department: "Sales", monthlySales: 5000 },
+  { employeeId: 2, department: "Sales", monthlySales: 7000 },
+  { employeeId: 3, department: "Sales", monthlySales: 6000 },
+  { employeeId: 4, department: "HR", monthlySales: 2000 },
+  { employeeId: 5, department: "HR", monthlySales: 3000 },
+  { employeeId: 6, department: "HR", monthlySales: 2500 },
+  { employeeId: 7, department: "Engineering", monthlySales: 10000 },
+  { employeeId: 8, department: "Engineering", monthlySales: 12000 },
+  { employeeId: 9, department: "Engineering", monthlySales: 11000 },
 ]);
 
 // Query to find the maximum sales.
@@ -106,320 +106,952 @@ db.employees.aggregate([
   },
 ]);
 
+db.employees.aggregate([
+  {
+    $setWindowFields: {
+      partitionBy: "$department", // Grouping by department
+      sortBy: { monthlySales: -1 }, // Sort by sales in descending order
+      output: {
+        rank: {
+          $rank: {}, // Assign rank based on the sorted order
+        },
+      },
+    },
+  },
+  {
+    $project: {
+      employeeId: 1,
+      department: 1,
+      monthlySales: 1,
+      rank: 1,
+    },
+  },
+]);
 
 // Question 1
 
 db.employees.aggregate([
-    {
-        $setWindowFields: {
-            partitionBy: "$department", // Grouping by department
-            sortBy: { monthlySales: -1 }, // Sort by sales in descending order
-            output: {
-                rank: {
-                    $rank: {} // Assign rank based on the sorted order
-                }
-            }
-        }
+  {
+    $setWindowFields: {
+      partitionBy: "$department", // Grouping by department
+      sortBy: { monthlySales: -1 }, // Sort by sales in descending order
+      output: {
+        rank: {
+          $rank: {}, // Assign rank based on the sorted order
+        },
+      },
     },
-    {
-        $project: {
-            employeeId: 1,
-            department: 1,
-            monthlySales: 1,
-            rank: 1
-        }
-    }
+  },
+  {
+    $project: {
+      employeeId: 1,
+      department: 1,
+      monthlySales: 1,
+      rank: 1,
+    },
+  },
 ]);
-
 
 db.employees.aggregate([
-    {
-        $setWindowFields: {
-            partitionBy: "$department",
-            sortBy: { monthlySales: 1 }, // Sort by sales in ascending order
-            output: {
-                cumulativeSales: {
-                    $sum: "$monthlySales"
-                }
-            }
-        }
+  {
+    $setWindowFields: {
+      partitionBy: "$department",
+      sortBy: { monthlySales: 1 }, // Sort by sales in ascending order
+      output: {
+        cumulativeSales: {
+          $sum: "$monthlySales",
+        },
+      },
     },
-    {
-        $project: {
-            employeeId: 1,
-            department: 1,
-            monthlySales: 1,
-            cumulativeSales: 1
-        }
-    }
+  },
+  {
+    $project: {
+      employeeId: 1,
+      department: 1,
+      monthlySales: 1,
+      cumulativeSales: 1,
+    },
+  },
 ]);
-
 
 // Question 2
 
-db.sensorData.insertMany([
-    { deviceId: 1, timestamp: new Date("2023-09-01T08:00:00Z"), temperature: 22.5 },
-    { deviceId: 1, timestamp: new Date("2023-09-01T09:00:00Z"), temperature: 23.0 },
-    { deviceId: 1, timestamp: new Date("2023-09-01T10:00:00Z"), temperature: 21.5 },
-    { deviceId: 1, timestamp: new Date("2023-09-01T11:00:00Z"), temperature: 24.0 },
-    { deviceId: 1, timestamp: new Date("2023-09-01T12:00:00Z"), temperature: 23.8 },
-    { deviceId: 1, timestamp: new Date("2023-09-01T13:00:00Z"), temperature: 22.0 },
-    { deviceId: 1, timestamp: new Date("2023-09-01T14:00:00Z"), temperature: 25.5 },
-    { deviceId: 1, timestamp: new Date("2023-09-01T15:00:00Z"), temperature: 26.1 },
-    { deviceId: 1, timestamp: new Date("2023-09-01T16:00:00Z"), temperature: 27.0 },
-    { deviceId: 1, timestamp: new Date("2023-09-01T17:00:00Z"), temperature: 24.5 },
-    { deviceId: 1, timestamp: new Date("2023-09-01T18:00:00Z"), temperature: 23.5 },
-    { deviceId: 2, timestamp: new Date("2023-09-01T08:00:00Z"), temperature: 18.5 },
-    { deviceId: 2, timestamp: new Date("2023-09-01T09:00:00Z"), temperature: 19.0 },
-    { deviceId: 2, timestamp: new Date("2023-09-01T10:00:00Z"), temperature: 20.5 },
-    { deviceId: 2, timestamp: new Date("2023-09-01T11:00:00Z"), temperature: 21.5 },
-    { deviceId: 2, timestamp: new Date("2023-09-01T12:00:00Z"), temperature: 22.0 },
-    { deviceId: 2, timestamp: new Date("2023-09-01T13:00:00Z"), temperature: 23.0 }
+db.sensorData.aggregate([
+  {
+    $group: {
+      _id: "$deviceId",
+      data: { $push: "$$ROOT" },
+    },
+  },
 ]);
+
+// My question:  How to sort the objects in above "data" array ?
+
+// Method 1:
+db.sensorData.aggregate([
+  {
+    $sort: { timestamp: -1 }, // ascending order
+  },
+  {
+    $group: {
+      _id: "$deviceId",
+      data: { $push: "$$ROOT" },
+    },
+  },
+]);
+
+// Method 2 (MongoDB 5.2+):
+db.sensorData.aggregate([
+  {
+    $group: {
+      _id: "$deviceId",
+      data: { $push: "$$ROOT" },
+    },
+  },
+  {
+    $project: {
+      data: {
+        $sortArray: { input: "$data", sortBy: { timestamp: 1 } },
+      },
+    },
+  },
+]);
+
+db.sensors.aggregate([
+  {
+    $group: {
+      _id: "$deviceId",
+      data: { $push: "$$ROOT" },
+    },
+  },
+  {
+    $project: {
+      _id: 1,
+      count: { $size: "$data" },
+    },
+  },
+]);
+
+db.sensors.insertMany([
+  {
+    deviceId: "A1",
+    timestamp: ISODate("2025-09-01T10:00:00Z"),
+    temperature: 25,
+  },
+  {
+    deviceId: "A1",
+    timestamp: ISODate("2025-09-01T10:05:00Z"),
+    temperature: 26,
+  },
+  {
+    deviceId: "A1",
+    timestamp: ISODate("2025-09-01T10:10:00Z"),
+    temperature: 24,
+  },
+  {
+    deviceId: "A1",
+    timestamp: ISODate("2025-09-01T10:15:00Z"),
+    temperature: 28,
+  },
+  {
+    deviceId: "A1",
+    timestamp: ISODate("2025-09-01T10:20:00Z"),
+    temperature: 27,
+  },
+  {
+    deviceId: "A1",
+    timestamp: ISODate("2025-09-01T10:25:00Z"),
+    temperature: 29,
+  },
+  {
+    deviceId: "A1",
+    timestamp: ISODate("2025-09-01T10:30:00Z"),
+    temperature: 30,
+  },
+  {
+    deviceId: "A1",
+    timestamp: ISODate("2025-09-01T10:35:00Z"),
+    temperature: 31,
+  },
+  {
+    deviceId: "A1",
+    timestamp: ISODate("2025-09-01T10:40:00Z"),
+    temperature: 28,
+  },
+  {
+    deviceId: "A1",
+    timestamp: ISODate("2025-09-01T10:45:00Z"),
+    temperature: 27,
+  },
+  {
+    deviceId: "A1",
+    timestamp: ISODate("2025-09-01T10:50:00Z"),
+    temperature: 26,
+  },
+
+  {
+    deviceId: "B1",
+    timestamp: ISODate("2025-09-01T10:00:00Z"),
+    temperature: 30,
+  },
+  {
+    deviceId: "B1",
+    timestamp: ISODate("2025-09-01T10:05:00Z"),
+    temperature: 29,
+  },
+  {
+    deviceId: "B1",
+    timestamp: ISODate("2025-09-01T10:10:00Z"),
+    temperature: 31,
+  },
+  {
+    deviceId: "B1",
+    timestamp: ISODate("2025-09-01T10:15:00Z"),
+    temperature: 32,
+  },
+  {
+    deviceId: "B1",
+    timestamp: ISODate("2025-09-01T10:20:00Z"),
+    temperature: 30,
+  },
+]);
+
+// Main Solution:
+
+db.sensors.aggregate([
+  {
+    $setWindowFields: {
+      partitionBy: "$deviceId",
+      sortBy: { timestamp: 1 },
+      output: {
+        movingAverageTemperature: {
+          $avg: "$temperature",
+          window: {
+            documents: [-9, 0],
+          },
+        },
+      },
+    },
+  },
+  {
+    $project: {
+      _id: 0,
+      deviceId: 1,
+      timestamp: 1,
+      temperature: 1,
+      movingAverageTemperature: 1,
+    },
+  },
+]);
+
+// db.sensorData.insertMany([
+//   {
+//     deviceId: 1,
+//     timestamp: new Date("2023-09-01T08:00:00Z"),
+//     temperature: 22.5,
+//   },
+//   {
+//     deviceId: 1,
+//     timestamp: new Date("2023-09-01T09:00:00Z"),
+//     temperature: 23.0,
+//   },
+//   {
+//     deviceId: 1,
+//     timestamp: new Date("2023-09-01T10:00:00Z"),
+//     temperature: 21.5,
+//   },
+//   {
+//     deviceId: 1,
+//     timestamp: new Date("2023-09-01T11:00:00Z"),
+//     temperature: 24.0,
+//   },
+//   {
+//     deviceId: 1,
+//     timestamp: new Date("2023-09-01T12:00:00Z"),
+//     temperature: 23.8,
+//   },
+//   {
+//     deviceId: 1,
+//     timestamp: new Date("2023-09-01T13:00:00Z"),
+//     temperature: 22.0,
+//   },
+//   {
+//     deviceId: 1,
+//     timestamp: new Date("2023-09-01T14:00:00Z"),
+//     temperature: 25.5,
+//   },
+//   {
+//     deviceId: 1,
+//     timestamp: new Date("2023-09-01T15:00:00Z"),
+//     temperature: 26.1,
+//   },
+//   {
+//     deviceId: 1,
+//     timestamp: new Date("2023-09-01T16:00:00Z"),
+//     temperature: 27.0,
+//   },
+//   {
+//     deviceId: 1,
+//     timestamp: new Date("2023-09-01T17:00:00Z"),
+//     temperature: 24.5,
+//   },
+//   {
+//     deviceId: 1,
+//     timestamp: new Date("2023-09-01T18:00:00Z"),
+//     temperature: 23.5,
+//   },
+//   {
+//     deviceId: 2,
+//     timestamp: new Date("2023-09-01T08:00:00Z"),
+//     temperature: 18.5,
+//   },
+//   {
+//     deviceId: 2,
+//     timestamp: new Date("2023-09-01T09:00:00Z"),
+//     temperature: 19.0,
+//   },
+//   {
+//     deviceId: 2,
+//     timestamp: new Date("2023-09-01T10:00:00Z"),
+//     temperature: 20.5,
+//   },
+//   {
+//     deviceId: 2,
+//     timestamp: new Date("2023-09-01T11:00:00Z"),
+//     temperature: 21.5,
+//   },
+//   {
+//     deviceId: 2,
+//     timestamp: new Date("2023-09-01T12:00:00Z"),
+//     temperature: 22.0,
+//   },
+//   {
+//     deviceId: 2,
+//     timestamp: new Date("2023-09-01T13:00:00Z"),
+//     temperature: 23.0,
+//   },
+// ]);
+
+// Main Solution:
 
 db.sensorData.aggregate([
-    {
-        $setWindowFields: {
-            partitionBy: "$deviceId", // Group by deviceId
-            sortBy: { timestamp: 1 }, // Sort by timestamp in ascending order
-            output: {
-                movingAverageTemperature: {
-                    $avg: "$temperature",
-                    window: {
-                        documents: [-9, 0] // Last 10 records (sliding window)
-                    }
-                }
-            }
-        }
+  {
+    $setWindowFields: {
+      partitionBy: "$deviceId", // Group by deviceId
+      sortBy: { timestamp: 1 }, // Sort by timestamp in ascending order
+      output: {
+        movingAverageTemperature: {
+          $avg: "$temperature",
+          window: {
+            documents: [-9, 0], // Last 10 records (sliding window)
+          },
+        },
+      },
     },
-    {
-        $project: {
-            _id: 0, // Exclude the _id field
-            deviceId: 1,
-            timestamp: 1,
-            temperature: 1,
-            movingAverageTemperature: 1
-        }
-    }
+  },
+  {
+    $project: {
+      _id: 0, // Exclude the _id field
+      deviceId: 1,
+      timestamp: 1,
+      temperature: 1,
+      movingAverageTemperature: 1,
+    },
+  },
 ]);
-
 
 // Question 3
+
+// You have a collection of students with nested documents for their courses, and within each course, there is an array of assignments with marks and weightage.
+// Write a query that computes the weighted average of each course's assignments and then computes the overall average grade for the student across all courses.
+
+// New dummy data:
+
 db.students.insertMany([
-    {
-        studentId: 1,
-        name: "John",
-        courses: [
-            {
-                courseName: "Math",
-                assignments: [
-                    { marks: 85, weightage: 0.5 },
-                    { marks: 90, weightage: 0.5 }
-                ]
-            },
-            {
-                courseName: "Physics",
-                assignments: [
-                    { marks: 75, weightage: 0.4 },
-                    { marks: 80, weightage: 0.6 }
-                ]
-            }
-        ]
-    },
-    {
-        studentId: 2,
-        name: "Jane",
-        courses: [
-            {
-                courseName: "Math",
-                assignments: [
-                    { marks: 95, weightage: 0.3 },
-                    { marks: 85, weightage: 0.7 }
-                ]
-            },
-            {
-                courseName: "Chemistry",
-                assignments: [
-                    { marks: 80, weightage: 0.5 },
-                    { marks: 70, weightage: 0.5 }
-                ]
-            }
-        ]
-    }
+  {
+    studentId: 1,
+    name: "Alice",
+    courses: [
+      {
+        courseName: "Math",
+        assignments: [
+          { assignment: "Quiz 1", marks: 80, weightage: 0.4 },
+          { assignment: "Quiz 2", marks: 90, weightage: 0.6 },
+        ],
+      },
+      {
+        courseName: "Science",
+        assignments: [
+          { assignment: "Lab 1", marks: 70, weightage: 0.3 },
+          { assignment: "Lab 2", marks: 85, weightage: 0.7 },
+        ],
+      },
+    ],
+  },
+  {
+    studentId: 2,
+    name: "Bob",
+    courses: [
+      {
+        courseName: "Math",
+        assignments: [
+          { assignment: "Quiz 1", marks: 60, weightage: 0.5 },
+          { assignment: "Quiz 2", marks: 75, weightage: 0.5 },
+        ],
+      },
+      {
+        courseName: "History",
+        assignments: [{ assignment: "Essay", marks: 80, weightage: 1.0 }],
+      },
+    ],
+  },
 ]);
 
+// Just finding weighted average for each course of a student:
+db.students.aggregate([
+  {
+    $project: {
+      name: 1,
+      courseAverages: {
+        $map: {
+          input: "$courses",
+          as: "c",
+          in: {
+            $let: {
+              vars: {
+                totalWeightage: { $sum: "$$c.assignments.weightage" },
+                totalWeighted: {
+                  $reduce: {
+                    input: "$$c.assignments",
+                    initialValue: 0,
+                    in: {
+                      $add: [
+                        "$$value",
+                        { $multiply: ["$$this.marks", "$$this.weightage"] },
+                      ],
+                    },
+                  },
+                },
+              },
+              in: {
+                courseName: "$$c.courseName",
+                computedAverage: {
+                  $divide: [
+                    "$$totalWeighted",
+                    {
+                      $cond: {
+                        if: { $eq: ["$$totalWeightage", 0] },
+                        then: 1,
+                        else: "$$totalWeightage",
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+]);
+
+// Now do unwinding
+db.students.aggregate([
+  {
+    $project: {
+      name: 1,
+      courseAverages: {
+        $map: {
+          input: "$courses",
+          as: "c",
+          in: {
+            $let: {
+              vars: {
+                totalWeightage: { $sum: "$$c.assignments.weightage" },
+                totalWeighted: {
+                  $reduce: {
+                    input: "$$c.assignments",
+                    initialValue: 0,
+                    in: {
+                      $add: [
+                        "$$value",
+                        { $multiply: ["$$this.marks", "$$this.weightage"] },
+                      ],
+                    },
+                  },
+                },
+              },
+              in: {
+                courseName: "$$c.courseName",
+                average: {
+                  $divide: [
+                    "$$totalWeighted",
+                    {
+                      $cond: {
+                        if: { $eq: ["$$totalWeightage", 0] },
+                        then: 1,
+                        else: "$$totalWeightage",
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  {
+    $unwind: "$courseAverages",
+  },
+]);
+
+// Solution 2:
 
 db.students.aggregate([
-    {
-        $addFields: {
-            courseWeightedAverages: {
-                $map: {
-                    input: "$courses",
-                    as: "course",
+  {
+    $project: {
+      name: 1,
+      courseAverages: {
+        $map: {
+          input: "$courses",
+          as: "c",
+          in: {
+            $let: {
+              vars: {
+                totalWeightage: { $sum: "$$c.assignments.weightage" },
+                totalWeighted: {
+                  $reduce: {
+                    input: "$$c.assignments",
+                    initialValue: 0,
                     in: {
-                        courseName: "$$course.courseName",
-                        weightedAverage: {
-                            $let: {
-                                vars: {
-                                    weightedData: {
-                                        $reduce: {
-                                            input: "$$course.assignments",
-                                            initialValue: { totalWeightedMarks: 0, totalWeightage: 0 },
-                                            in: {
-                                                totalWeightedMarks: {
-                                                    $add: [
-                                                        "$$value.totalWeightedMarks",
-                                                        { $multiply: ["$$this.marks", "$$this.weightage"] }
-                                                    ]
-                                                },
-                                                totalWeightage: {
-                                                    $add: ["$$value.totalWeightage", "$$this.weightage"]
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                                in: {
-                                    $cond: {
-                                        if: { $gt: ["$$weightedData.totalWeightage", 0] },
-                                        then: {
-                                            $divide: [
-                                                "$$weightedData.totalWeightedMarks",
-                                                "$$weightedData.totalWeightage"
-                                            ]
-                                        },
-                                        else: null
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+                      $add: [
+                        "$$value",
+                        { $multiply: ["$$this.marks", "$$this.weightage"] },
+                      ],
+                    },
+                  },
+                },
+              },
+              in: {
+                courseName: "$$c.courseName",
+                average: {
+                  $divide: [
+                    "$$totalWeighted",
+                    {
+                      $cond: {
+                        if: { $eq: ["$$totalWeightage", 0] },
+                        then: 1,
+                        else: "$$totalWeightage",
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
     },
-    {
-        $addFields: {
-            overallAverage: {
-                $avg: "$courseWeightedAverages.weightedAverage"
-            }
-        }
+  },
+  {
+    $unwind: "$courseAverages",
+  },
+  {
+    $group: {
+      _id: "$name",
+      courses: { $push: "$courseAverages" },
+      overallAverage: { $avg: "$courseAverages.average" },
     },
-    {
-        $project: {
-            _id: 0,
-            studentId: 1,
-            name: 1,
-            courseWeightedAverages: 1,
-            overallAverage: 1
-        }
-    }
+  },
 ]);
 
+db.students.insertMany([
+  {
+    studentId: 1,
+    name: "John",
+    courses: [
+      {
+        courseName: "Math",
+        assignments: [
+          { marks: 85, weightage: 0.5 },
+          { marks: 90, weightage: 0.5 },
+        ],
+      },
+      {
+        courseName: "Physics",
+        assignments: [
+          { marks: 75, weightage: 0.4 },
+          { marks: 80, weightage: 0.6 },
+        ],
+      },
+    ],
+  },
+  {
+    studentId: 2,
+    name: "Jane",
+    courses: [
+      {
+        courseName: "Math",
+        assignments: [
+          { marks: 95, weightage: 0.3 },
+          { marks: 85, weightage: 0.7 },
+        ],
+      },
+      {
+        courseName: "Chemistry",
+        assignments: [
+          { marks: 80, weightage: 0.5 },
+          { marks: 70, weightage: 0.5 },
+        ],
+      },
+    ],
+  },
+]);
 
-
+db.students.aggregate([
+  {
+    $addFields: {
+      courseWeightedAverages: {
+        $map: {
+          input: "$courses",
+          as: "course",
+          in: {
+            courseName: "$$course.courseName",
+            weightedAverage: {
+              $let: {
+                vars: {
+                  weightedData: {
+                    $reduce: {
+                      input: "$$course.assignments",
+                      initialValue: {
+                        totalWeightedMarks: 0,
+                        totalWeightage: 0,
+                      },
+                      in: {
+                        totalWeightedMarks: {
+                          $add: [
+                            "$$value.totalWeightedMarks",
+                            { $multiply: ["$$this.marks", "$$this.weightage"] },
+                          ],
+                        },
+                        totalWeightage: {
+                          $add: ["$$value.totalWeightage", "$$this.weightage"],
+                        },
+                      },
+                    },
+                  },
+                },
+                in: {
+                  $cond: {
+                    if: { $gt: ["$$weightedData.totalWeightage", 0] },
+                    then: {
+                      $divide: [
+                        "$$weightedData.totalWeightedMarks",
+                        "$$weightedData.totalWeightage",
+                      ],
+                    },
+                    else: null,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  {
+    $addFields: {
+      overallAverage: {
+        $avg: "$courseWeightedAverages.weightedAverage",
+      },
+    },
+  },
+  {
+    $project: {
+      _id: 0,
+      studentId: 1,
+      name: 1,
+      courseWeightedAverages: 1,
+      overallAverage: 1,
+    },
+  },
+]);
 
 // Question 4
 
+// In a collection of products, each document
+// contains the fields price, categories, and sales.
+// Some products have nested discount fields.
+
+// Write an aggregation query that calculates the final price for each product,
+// applying the discount only if the product belongs to a specific category ("electronics").
+// Provide the list of products with the final price.
 
 db.products.insertMany([
-    {
-        "_id": 1,
-        "name": "Smartphone",
-        "price": 500,
-        "categories": ["electronics", "mobile"],
-        "discount": { "percentage": 10 },
-        "sales": 150
-    },
-    {
-        "_id": 2,
-        "name": "Laptop",
-        "price": 1200,
-        "categories": ["electronics", "computers"],
-        "discount": { "percentage": 15 },
-        "sales": 200
-    },
-    {
-        "_id": 3,
-        "name": "Vacuum Cleaner",
-        "price": 300,
-        "categories": ["home appliances"],
-        "sales": 50
-    },
-    {
-        "_id": 4,
-        "name": "Washing Machine",
-        "price": 700,
-        "categories": ["home appliances", "electronics"],
-        "discount": { "percentage": 5 },
-        "sales": 80
-    }
+  {
+    productId: 1,
+    name: "Laptop",
+    categories: ["electronics", "computers"],
+    price: 1000,
+    discount: { percent: 10 }, // 10% off, should apply
+  },
+  {
+    productId: 2,
+    name: "Shirt",
+    categories: ["clothing", "men"],
+    price: 50,
+    // no discount, not electronics
+  },
+  {
+    productId: 3,
+    name: "Phone",
+    categories: ["electronics", "mobile"],
+    price: 500,
+    discount: { percent: 5 }, // 5% off, should apply
+  },
+  {
+    productId: 4,
+    name: "Book",
+    categories: ["books", "education"],
+    price: 20,
+    discount: { percent: 50 }, // discount exists, but not electronics → ignore
+  },
+  {
+    productId: 5,
+    name: "Headphones",
+    categories: ["electronics", "audio"],
+    price: 200,
+    // electronics but no discount → final price = 200
+  },
 ]);
 
+// Laptop & Phone → electronics + discount → discounted price.
 
+// Shirt → not electronics, no discount → same price.
+
+// Book → discount exists, but not electronics → must ignore discount.
+
+// Headphones → electronics, but no discount → keep original price.
 
 db.products.aggregate([
-    {
-        $match: {
-            $expr: {
-                $in: ["electronics", "$categories"] // Match products in the "electronics" category
-            }
-        }
+  {
+    $match: {
+      $expr: {
+        $in: ["electronics", "$categories"], // Match products in the "electronics" category
+      },
     },
-    {
-        $addFields: {
-            discountedPrice: {
-                $cond: {
-                    if: { $gt: [{ $ifNull: ["$discount.percentage", 0] }, 0] }, // Check if discount is present
-                    then: {
-                        $subtract: [
-                            "$price",
-                            { $multiply: ["$price", { $divide: ["$discount.percentage", 100] }] } // Apply discount
-                        ]
-                    },
-                    else: "$price" // If no discount, keep the original price
-                }
-            }
-        }
+  },
+  {
+    $addFields: {
+      discountedPrice: {
+        $cond: {
+          if: { $gt: [{ $ifNull: ["$discount.percentage", 0] }, 0] }, // Check if discount is present
+          then: {
+            $subtract: [
+              "$price",
+              {
+                $multiply: [
+                  "$price",
+                  { $divide: ["$discount.percentage", 100] },
+                ],
+              }, // Apply discount
+            ],
+          },
+          else: "$price", // If no discount, keep the original price
+        },
+      },
     },
-    {
-        $project: {
-            name: 1,
-            price: 1,
-            discount: "$discount.percentage",
-            discountedPrice: 1
-        }
-    }
+  },
+  {
+    $project: {
+      name: 1,
+      price: 1,
+      discount: "$discount.percentage",
+      discountedPrice: 1,
+    },
+  },
 ]);
-
 
 // Question 5
 
 db.userLogs.insertMany([
-    { userId: 1, eventType: "login", timestamp: new Date("2023-09-01T08:00:00Z") },
-    { userId: 1, eventType: "viewPage", timestamp: new Date("2023-09-01T08:15:00Z") },
-    { userId: 1, eventType: "viewPage", timestamp: new Date("2023-09-01T08:20:00Z") },
-    { userId: 1, eventType: "logout", timestamp: new Date("2023-09-01T09:00:00Z") },
-    { userId: 1, eventType: "login", timestamp: new Date("2023-09-02T10:00:00Z") },
-    { userId: 1, eventType: "viewPage", timestamp: new Date("2023-09-02T10:30:00Z") },
-    { userId: 1, eventType: "logout", timestamp: new Date("2023-09-02T11:00:00Z") },
-    { userId: 2, eventType: "login", timestamp: new Date("2023-09-01T08:00:00Z") },
-    { userId: 2, eventType: "viewPage", timestamp: new Date("2023-09-01T08:20:00Z") },
-    { userId: 2, eventType: "logout", timestamp: new Date("2023-09-01T09:00:00Z") }
+  {
+    userId: 1,
+    eventType: "login",
+    timestamp: new Date("2023-09-01T08:00:00Z"),
+  },
+  {
+    userId: 1,
+    eventType: "viewPage",
+    timestamp: new Date("2023-09-01T08:15:00Z"),
+  },
+  {
+    userId: 1,
+    eventType: "viewPage",
+    timestamp: new Date("2023-09-01T08:20:00Z"),
+  },
+  {
+    userId: 1,
+    eventType: "logout",
+    timestamp: new Date("2023-09-01T09:00:00Z"),
+  },
+  {
+    userId: 1,
+    eventType: "login",
+    timestamp: new Date("2023-09-02T10:00:00Z"),
+  },
+  {
+    userId: 1,
+    eventType: "viewPage",
+    timestamp: new Date("2023-09-02T10:30:00Z"),
+  },
+  {
+    userId: 1,
+    eventType: "logout",
+    timestamp: new Date("2023-09-02T11:00:00Z"),
+  },
+  {
+    userId: 2,
+    eventType: "login",
+    timestamp: new Date("2023-09-01T08:00:00Z"),
+  },
+  {
+    userId: 2,
+    eventType: "viewPage",
+    timestamp: new Date("2023-09-01T08:20:00Z"),
+  },
+  {
+    userId: 2,
+    eventType: "logout",
+    timestamp: new Date("2023-09-01T09:00:00Z"),
+  },
 ]);
 
 db.userLogs.aggregate([
-    {
-        $sort: { userId: 1, timestamp: 1 } // Sort events by userId and timestamp
+  {
+    $sort: { userId: 1, timestamp: 1 }, // Sort events by userId and timestamp
+  },
+  {
+    $group: {
+      _id: {
+        userId: "$userId",
+        eventType: "$eventType",
+      },
+      events: { $push: "$$ROOT" }, // Group events by userId and eventType
     },
-    {
-        $group: {
-            _id: {
-                userId: "$userId",
-                eventType: "$eventType"
-            },
-            events: { $push: "$$ROOT" } // Group events by userId and eventType
-        }
+  },
+  // Further stages will go here for session extraction, duration, and page views
+]);
+
+// "You have an e-commerce platform, and the products collection contains fields for views, sales, and ratings.
+// Write an aggregation query to rank products based on a weighted formula where sales have a weight of 50%, ratings 30%, and views 20%.
+// Calculate the popularity score for each product and rank them accordingly."
+
+// Challenge: The interviewee needs to calculate a custom weighted formula and rank products based on that.
+// Operators to Use: $addFields, $sum, $sort, $rank, $multiply, $merge
+
+db.products.insertMany([
+  {
+    productId: 1,
+    name: "Laptop",
+    views: 1000,
+    sales: 200,
+    ratings: 4.5,
+  },
+  {
+    productId: 2,
+    name: "Phone",
+    views: 1500,
+    sales: 300,
+    ratings: 4.0,
+  },
+  {
+    productId: 3,
+    name: "Headphones",
+    views: 800,
+    sales: 400,
+    ratings: 4.8,
+  },
+  {
+    productId: 4,
+    name: "Shirt",
+    views: 1200,
+    sales: 150,
+    ratings: 3.8,
+  },
+  {
+    productId: 5,
+    name: "Book",
+    views: 600,
+    sales: 100,
+    ratings: 4.9,
+  },
+]);
+
+db.products.aggregate([
+  // Step 1: get max values for normalization
+  {
+    $facet: {
+      data: [{ $match: {} }], // keep original docs
+      maxValues: [
+        {
+          $group: {
+            _id: null,
+            maxSales: { $max: "$sales" },
+            maxRatings: { $max: "$ratings" },
+            maxViews: { $max: "$views" },
+          },
+        },
+      ],
     },
-    // Further stages will go here for session extraction, duration, and page views
+  },
+  {
+    $unwind: "$maxValues",
+  },
+  {
+    $unwind: "$data",
+  },
+  {
+    $replaceRoot: {
+      newRoot: { $mergeObjects: ["$data", "$maxValues"] },
+    },
+  },
+  // Step 2: calculate normalized popularity score
+  {
+    $addFields: {
+      popularityScore: {
+        $add: [
+          { $multiply: [{ $divide: ["$sales", "$maxSales"] }, 0.5] },
+          { $multiply: [{ $divide: ["$ratings", "$maxRatings"] }, 0.3] },
+          { $multiply: [{ $divide: ["$views", "$maxViews"] }, 0.2] },
+        ],
+      },
+    },
+  },
+  // Step 3: rank by popularityScore
+  {
+    $setWindowFields: {
+      sortBy: { popularityScore: -1 },
+      output: {
+        rank: { $rank: {} },
+      },
+    },
+  },
+  // Step 4: project clean output
+  {
+    $project: {
+      _id: 0,
+      productId: 1,
+      name: 1,
+      sales: 1,
+      ratings: 1,
+      views: 1,
+      popularityScore: 1,
+      rank: 1,
+    },
+  },
 ]);
