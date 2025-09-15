@@ -880,6 +880,43 @@ db.products.aggregate([
   },
 ]);
 
+// Use $$REMOVE to conditionally remove the field during $project and $addFields aggregation 
+// pipeline stages when used with $cond operator.
+db.products.aggregate([
+  {
+    $project: {
+      productId: 1,
+      name: 1,
+      categories: 1,
+      price: 1,
+      discount: 1,
+      discountedPrice: {
+        $cond: {
+          if: { $in: ["electronics", "$categories"] },
+          then: {
+            $cond: {
+              if: { $ifNull: ["$discount", false] },
+              then: {
+                $subtract: [
+                  "$price",
+                  {
+                    $multiply: [
+                      "$price",
+                      { $divide: ["$discount.percent", 100] },
+                    ],
+                  },
+                ],
+              },
+              else: "$$REMOVE",
+            },
+          },
+          else: "$$REMOVE",
+        },
+      },
+    },
+  },
+]);
+
 
 // Question 5
 
