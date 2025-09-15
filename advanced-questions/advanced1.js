@@ -507,20 +507,20 @@ db.students.insertMany([
   },
 ]);
 
-// Just finding weighted average for each course of a student:
+// Best Solution:
 db.students.aggregate([
   {
     $project: {
       name: 1,
-      courseAverages: {
+      courses: {
         $map: {
           input: "$courses",
           as: "c",
           in: {
             $let: {
               vars: {
-                totalWeightage: { $sum: "$$c.assignments.weightage" },
-                totalWeighted: {
+                weightedTotal: { $sum: "$$c.assignments.weightage" },
+                weightedSum: {
                   $reduce: {
                     input: "$$c.assignments",
                     initialValue: 0,
@@ -535,20 +535,28 @@ db.students.aggregate([
               },
               in: {
                 courseName: "$$c.courseName",
-                computedAverage: {
-                  $divide: [
-                    "$$totalWeighted",
-                    {
-                      $cond: {
-                        if: { $eq: ["$$totalWeightage", 0] },
-                        then: 1,
-                        else: "$$totalWeightage",
-                      },
-                    },
-                  ],
+                weightedAverage: {
+                  $divide: ["$$weightedSum", "$$weightedTotal"],
                 },
               },
             },
+          },
+        },
+      },
+    },
+  },
+  {
+    $project: {
+      name: 1,
+      courses: 1,
+      totalAverage: {
+        $let: {
+          vars: {
+            weightedAverageSum: { $sum: "$courses.weightedAverage" },
+            totalCourses: { $size: "$courses" },
+          },
+          in: {
+            $divide: ["$$weightedAverageSum", "$$totalCourses"],
           },
         },
       },
