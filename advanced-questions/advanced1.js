@@ -847,42 +847,39 @@ db.products.insertMany([
 
 db.products.aggregate([
   {
-    $match: {
-      $expr: {
-        $in: ["electronics", "$categories"], // Match products in the "electronics" category
-      },
-    },
-  },
-  {
-    $addFields: {
+    $project: {
+      productId: 1,
+      name: 1,
+      categories: 1,
+      price: 1,
+      discount: 1,
       discountedPrice: {
         $cond: {
-          if: { $gt: [{ $ifNull: ["$discount.percentage", 0] }, 0] }, // Check if discount is present
+          if: { $in: ["electronics", "$categories"] },
           then: {
-            $subtract: [
-              "$price",
-              {
-                $multiply: [
+            $cond: {
+              if: { $ifNull: ["$discount", false] },
+              then: {
+                $subtract: [
                   "$price",
-                  { $divide: ["$discount.percentage", 100] },
+                  {
+                    $multiply: [
+                      "$price",
+                      { $divide: ["$discount.percent", 100] },
+                    ],
+                  },
                 ],
-              }, // Apply discount
-            ],
+              },
+              else: "$price",
+            },
           },
-          else: "$price", // If no discount, keep the original price
+          else: "$price",
         },
       },
     },
   },
-  {
-    $project: {
-      name: 1,
-      price: 1,
-      discount: "$discount.percentage",
-      discountedPrice: 1,
-    },
-  },
 ]);
+
 
 // Question 5
 
