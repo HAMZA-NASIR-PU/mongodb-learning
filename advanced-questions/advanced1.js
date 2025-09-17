@@ -920,6 +920,10 @@ db.products.aggregate([
 
 // Question 5
 
+//You have a collection of user activity logs where each document contains a userId, eventType (e.g., login, logout, viewPage, etc.),
+// and timestamp. Write a query that summarizes the session information for each user. Each session is defined by a login event followed
+// by a logout event. Include the total number of sessions, average session duration, and the number of times a user has viewed pages per session.
+
 // Case 1: when each user have both login and logout time.
 db.userLogs.insertMany([
   {
