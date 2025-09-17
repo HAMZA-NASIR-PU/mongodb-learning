@@ -920,6 +920,7 @@ db.products.aggregate([
 
 // Question 5
 
+// Case 1: when each user have both login and logout time.
 db.userLogs.insertMany([
   {
     userId: 1,
@@ -973,20 +974,100 @@ db.userLogs.insertMany([
   },
 ]);
 
+// Main solution
 db.userLogs.aggregate([
+  // 1. Sort by user + timestamp
   {
-    $sort: { userId: 1, timestamp: 1 }, // Sort events by userId and timestamp
+    $sort: { userId: 1, timestamp: 1 },
   },
+  // 2. Keep only login + logout events
   {
-    $group: {
-      _id: {
-        userId: "$userId",
-        eventType: "$eventType",
-      },
-      events: { $push: "$$ROOT" }, // Group events by userId and eventType
+    $match: {
+      eventType: { $in: ["login", "logout"] },
     },
   },
-  // Further stages will go here for session extraction, duration, and page views
+  // 3. For each login, peek at the next event
+  {
+    $setWindowFields: {
+      partitionBy: "$userId",
+      sortBy: { timestamp: 1 },
+      output: {
+        nextEvent: { $shift: { output: "$eventType", by: 1 } },
+        nextTime: { $shift: { output: "$timestamp", by: 1 } },
+      },
+    },
+  },
+  // 4. Keep only proper login → logout pairs
+  {
+    $match: { eventType: "login", nextEvent: "logout" },
+  },
+
+  // 5. Reshape docs into sessions
+  {
+    $project: {
+      _id: 0,
+      userId: 1,
+      loginTime: "$timestamp",
+      logoutTime: "$nextTime",
+    },
+  },
+  // 6. Lookup page views inside session window
+  {
+    $lookup: {
+      from: "userLogs",
+      let: { u: "$userId", login: "$loginTime", logout: "$logoutTime" },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                { $eq: ["$userId", "$$u"] },
+                { $eq: ["$eventType", "viewPage"] },
+                { $gte: ["$timestamp", "$$login"] },
+                { $lte: ["$timestamp", "$$logout"] },
+              ],
+            },
+          },
+        },
+      ],
+      as: "pageViews",
+    },
+  },
+  // 7. Calculate session duration and page view count.
+  {
+    $addFields: {
+      sessionDuration: {
+        $divide: [
+          { $subtract: ["$logoutTime", "$loginTime"] }, // milliseconds
+          1000 * 60, // convert to minutes
+        ],
+      },
+      pageViewCount: { $size: "$pageViews" },
+    },
+  },
+  // 8: Group per user
+  {
+    $group: {
+      _id: "$userId",
+      totalSessions: { $sum: 1 },
+      avgSessionDuration: { $avg: "$sessionDuration" },
+      avgPageViewsPerSession: { $avg: "$pageViewCount" },
+    },
+  },
+  {
+    $project: {
+      _id: 0,
+      userId: "$_id",
+      totalSessions: 1,
+      avgSessionDuration: 1,
+      avgPageViewsPerSession: 1,
+    },
+  },
+  {
+    $sort: {
+      userId: 1,
+    },
+  },
 ]);
 
 // "You have an e-commerce platform, and the products collection contains fields for views, sales, and ratings.
