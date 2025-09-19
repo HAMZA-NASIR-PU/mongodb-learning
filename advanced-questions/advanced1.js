@@ -1074,6 +1074,111 @@ db.userLogs.aggregate([
   },
 ]);
 
+// Solution 2
+
+db.userLogs.aggregate([
+  {
+    // Stage 1: Group events by user and sort them by timestamp to easily identify sessions.
+    $sort: { userId: 1, timestamp: 1 },
+  },
+  {
+    // Stage 2: Identify login and logout events to define session boundaries.
+    $group: {
+      _id: "$userId",
+      events: {
+        $push: {
+          eventType: "$eventType",
+          timestamp: "$timestamp",
+        },
+      },
+    },
+  },
+  {
+    // Stage 3: Process events for each user to extract session details.
+    $project: {
+      _id: 1,
+      sessions: {
+        $reduce: {
+          input: "$events",
+          initialValue: {
+            sessionsArray: [],
+            currentPageViews: 0,
+            currentLoginTimestamp: null,
+          },
+          in: {
+            $let: {
+              vars: {
+                currentEvent: "$$this",
+                accumulator: "$$value",
+              },
+              in: {
+                // If it's a login event, record the login timestamp.
+                currentLoginTimestamp: {
+                  $cond: {
+                    if: { $eq: ["$$currentEvent.eventType", "login"] },
+                    then: "$$currentEvent.timestamp",
+                    else: "$$accumulator.currentLoginTimestamp",
+                  },
+                },
+                // Count page views.
+                currentPageViews: {
+                  $cond: {
+                    if: { $eq: ["$$currentEvent.eventType", "viewPage"] },
+                    then: { $add: ["$$accumulator.currentPageViews", 1] },
+                    else: "$$accumulator.currentPageViews",
+                  },
+                },
+                // When a logout event occurs, finalize the session.
+                sessionsArray: {
+                  $cond: {
+                    if: { $eq: ["$$currentEvent.eventType", "logout"] },
+                    then: {
+                      $concatArrays: [
+                        "$$accumulator.sessionsArray",
+                        [
+                          {
+                            sessionDuration: {
+                              $subtract: [
+                                "$$currentEvent.timestamp",
+                                "$$accumulator.currentLoginTimestamp",
+                              ],
+                            },
+                            pageViewsInSession:
+                              "$$accumulator.currentPageViews",
+                          },
+                        ],
+                      ],
+                    },
+                    else: "$$accumulator.sessionsArray",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  {
+    // Stage 4: Calculate aggregated session statistics per user.
+    $project: {
+      _id: 1,
+      totalSessions: { $size: "$sessions.sessionsArray" },
+      averageSessionDuration: {
+        $avg: "$sessions.sessionsArray.sessionDuration",
+      },
+      pageViewsPerSession: {
+        // Calculate average page views per session. Handle cases with no sessions.
+        $cond: {
+          if: { $eq: [{ $size: "$sessions.sessionsArray" }, 0] },
+          then: 0,
+          else: { $avg: "$sessions.sessionsArray.pageViewsInSession" },
+        },
+      },
+    },
+  },
+]);
+
 // "You have an e-commerce platform, and the products collection contains fields for views, sales, and ratings.
 // Write an aggregation query to rank products based on a weighted formula where sales have a weight of 50%, ratings 30%, and views 20%.
 // Calculate the popularity score for each product and rank them accordingly."
