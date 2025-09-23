@@ -1224,6 +1224,8 @@ db.products.insertMany([
   },
 ]);
 
+// Normalization = leveling the playing field so that weights represent true importance instead of just being overwhelmed by raw numbers.
+
 db.products.aggregate([
   // Step 1: get max values for normalization
   {
@@ -1287,3 +1289,42 @@ db.products.aggregate([
     },
   },
 ]);
+
+// Without using the concept of normalization.
+db.products.aggregate([
+  {
+    $addFields: {
+      popularityScore: {
+        $sum: [
+          { $multiply: ["$sales", 0.5] },
+          { $multiply: ["$ratings", 0.3] },
+          { $multiply: ["$views", 0.2] },
+        ],
+      },
+    },
+  },
+  {
+    $setWindowFields: {
+      sortBy: { popularityScore: -1 },
+      output: {
+        rank: { $rank: {} },
+      },
+    },
+  },
+  {
+    $sort: { popularityScore: -1 },
+  },
+  {
+    $project: {
+      _id: 0,
+      productId: 1,
+      name: 1,
+      views: 1,
+      sales: 1,
+      ratings: 1,
+      popularityScore: 1,
+      rank: 1,
+    },
+  },
+]);
+
