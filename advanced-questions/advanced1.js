@@ -1328,3 +1328,74 @@ db.products.aggregate([
   },
 ]);
 
+
+// Question 10
+// You have a collection of user interactions where each document contains userId, eventType, and timestamp. 
+// Write an aggregation query that calculates the number of each event type (viewPage, click, purchase) that occurred in 
+// a sliding 30-minute time window for each user. The output should include the userId, event type, and count of events within each 30-minute window.
+
+
+db.interactions.insertMany([
+  { userId: "U1", eventType: "viewPage", timestamp: new Date("2023-09-01T08:00:00Z") },
+  { userId: "U1", eventType: "click",    timestamp: new Date("2023-09-01T08:05:00Z") },
+  { userId: "U1", eventType: "viewPage", timestamp: new Date("2023-09-01T08:10:00Z") },
+  { userId: "U1", eventType: "purchase", timestamp: new Date("2023-09-01T08:20:00Z") },
+  { userId: "U1", eventType: "click",    timestamp: new Date("2023-09-01T08:25:00Z") },
+  { userId: "U1", eventType: "viewPage", timestamp: new Date("2023-09-01T08:40:00Z") },
+  { userId: "U2", eventType: "viewPage", timestamp: new Date("2023-09-01T08:00:00Z") },
+  { userId: "U2", eventType: "purchase", timestamp: new Date("2023-09-01T08:15:00Z") },
+  { userId: "U2", eventType: "viewPage", timestamp: new Date("2023-09-01T08:35:00Z") },
+  { userId: "U2", eventType: "click",    timestamp: new Date("2023-09-01T08:50:00Z") },
+  { userId: "U2", eventType: "click",    timestamp: new Date("2023-09-01T09:00:00Z") }
+]);
+
+
+
+// Error: Range-based bounds require sortBy a single field -> Must use "sort By" field in "$setWindowFields" aggregation pipeline stage.
+db.interactions.aggregate([
+  {
+    $sort: { userId: 1, timestamp: 1 }
+  },
+  {
+    $setWindowFields: {
+      partitionBy: { userId: "$userId", eventType: "$eventType" },
+      output: {
+        count: {
+          $sum: 1,
+          window: {
+            range: [-30 * 60 * 1000, "current"], unit: "millisecond"
+          }
+        }
+      }
+    }
+  }
+  ]);
+
+  
+  // Main Solution
+  db.interactions.aggregate([
+  { $sort: { userId: 1, timestamp: 1 } },
+  {
+    $setWindowFields: {
+      partitionBy: { userId: "$userId", eventType: "$eventType" },
+      sortBy: { timestamp: 1 },
+      output: {
+        count: {
+          $sum: 1,
+          window: {
+            range: [-30 * 60 * 1000, "current"],
+            unit: "millisecond"
+          }
+        }
+      }
+    }
+  },
+  {
+    $addFields: {
+      last30Minutes: {
+        $subtract: ["$timestamp", 30* 60 * 1000]
+      }
+    }
+  }
+]);
+
