@@ -1144,6 +1144,95 @@ db.userLogs.aggregate([
   },
 ]);
 
+// Solution 3
+
+db.userLogs.aggregate([
+  {
+    $sort: { userId: 1, timestamp: 1 }
+  },
+  {
+    $match: {
+      eventType: {
+        $in: ["login", "logout"]
+      }
+    }
+  },
+  {
+    $setWindowFields: {
+      partitionBy: "$userId",
+      sortBy: { timestamp: 1 },
+      output: {
+        nextEvent: {
+          $shift: {
+            output: "$eventType", by: 1
+          }
+        },
+        nextTime: {
+          $shift: {
+            output: "$timestamp", by: 1
+          }
+        }
+      }
+    }
+  },
+  {
+    $match: {
+      eventType: "login",
+      nextEvent: "logout"
+    }
+  },
+  {
+    $project: {
+      _id: 1,
+      userId: 1,
+      timestamp: 1,
+      nextTime: 1
+    }
+  },
+  {
+    $lookup: {
+      from: "userLogs",
+      let: { u: "$userId", login: "$timestamp", logout: "$nextTime" },
+      pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [ {$eq: ["$userId", "$$u"]}, {$eq: ["$eventType", "viewPage"]}, {$gte: ["$timestamp", "$$login"]}, {$lte: ["$timestamp", "$$logout"]} ]
+              }
+            }
+          }
+        ],
+      as: "pageViews"
+    }
+  },
+  {
+    $addFields: {
+      viewPageCount: { $size: "$pageViews" }
+    }
+  },
+  {
+    $project: {
+      pageViews: 0
+    }
+  },
+  {
+    $addFields: {
+      sessionDurationInMinutes: {
+        $divide: [{ $subtract: ["$nextTime", "$timestamp"] }, 60 * 1000]
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 1,
+      userId: 1,
+      loginTime: "$timestamp",
+      logoutTime: "$nextTime",
+      viewPageCount: 1
+    }
+  }
+  ]);
+
 // "You have an e-commerce platform, and the products collection contains fields for views, sales, and ratings.
 // Write an aggregation query to rank products based on a weighted formula where sales have a weight of 50%, ratings 30%, and views 20%.
 // Calculate the popularity score for each product and rank them accordingly."
