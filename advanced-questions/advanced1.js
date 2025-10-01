@@ -1453,3 +1453,68 @@ db.interactions.aggregate([
   }
 ]);
 
+db.interactions.aggregate([
+  { $sort: { userId: 1, timestamp: 1 } },
+  {
+    $setWindowFields: {
+      partitionBy: { userId: "$userId", eventType: "$eventType" },
+      sortBy: { timestamp: 1 },
+      output: {
+        countInLast30Mins: {
+          $sum: 1,
+          window: {
+            range: [-30, 0],
+            unit: "minute"
+          }
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      userId: 1,
+      eventType: 1,
+      timestamp: 1,
+      countInLast30Mins: 1
+    }
+  }
+]);
+
+
+db.interactions.aggregate([
+  {
+    $sort: { userId: 1, timestamp: 1 }
+  },
+  {
+    $setWindowFields: {
+      partitionBy: { userId: "$userId", eventType: "$eventType" },
+      sortBy: { timestamp: 1 },
+      output: {
+        countInLast30Mins: {
+          $sum: 1,
+          window: {
+            range: [-30, 0],
+            unit: "minute"
+          }
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      userId: 1,
+      eventType: 1,
+      timestamp: 1,
+      countInLast30Mins: 1
+    }
+  },
+  {
+    $addFields: {
+      last30Minutes: {
+        $subtract: ["$timestamp", 30 * 60 * 1000],
+      },
+    },
+  },
+  ]);
