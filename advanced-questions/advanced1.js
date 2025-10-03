@@ -1233,6 +1233,8 @@ db.userLogs.aggregate([
   }
 ]);
 
+// Question 6
+
 // "You have an e-commerce platform, and the products collection contains fields for views, sales, and ratings.
 // Write an aggregation query to rank products based on a weighted formula where sales have a weight of 50%, ratings 30%, and views 20%.
 // Calculate the popularity score for each product and rank them accordingly."
@@ -1671,4 +1673,73 @@ db.calendar.aggregate([
       month: "$array._id",
     },
   },
+]);
+
+
+// Solution # 3
+
+db.calendar.aggregate([
+  {
+    $group: {
+      _id: { $month: "$dos" },
+      count: { $sum: 1 }
+    }
+  },
+  {
+    $sort: {
+      _id: 1
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      month: "$_id",
+      count: 1,
+    }
+  },
+  {
+    $facet: {
+      data: [{ $match: {} }]
+    }
+  },
+  {
+    $addFields: {
+      data: {
+        $map: {
+          input: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+          as: "month",
+          in: {
+            $let: {
+              vars: {
+                index: {
+                  $indexOfArray: ["$data.month", "$$month"]
+                }
+              },
+              in: {
+                $cond: {
+                  if: { $gt: ["$$index", -1] },
+                  then: {
+                    $arrayElemAt: ["$data", "$$index"]
+                  },
+                  else: {
+                    month: "$$month",
+                    count: 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    $unwind: "$data"
+  },
+  {
+    $project: {
+      month: "$data.month",
+      count: "$data.count"
+    }
+  }
 ]);
