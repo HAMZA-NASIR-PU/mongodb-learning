@@ -1194,14 +1194,14 @@ db.userLogs.aggregate([
       from: "userLogs",
       let: { u: "$userId", login: "$timestamp", logout: "$nextTime" },
       pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [ {$eq: ["$userId", "$$u"]}, {$eq: ["$eventType", "viewPage"]}, {$gte: ["$timestamp", "$$login"]}, {$lte: ["$timestamp", "$$logout"]} ]
-              }
+        {
+          $match: {
+            $expr: {
+              $and: [{ $eq: ["$userId", "$$u"] }, { $eq: ["$eventType", "viewPage"] }, { $gte: ["$timestamp", "$$login"] }, { $lte: ["$timestamp", "$$logout"] }]
             }
           }
-        ],
+        }
+      ],
       as: "pageViews"
     }
   },
@@ -1231,7 +1231,7 @@ db.userLogs.aggregate([
       viewPageCount: 1
     }
   }
-  ]);
+]);
 
 // "You have an e-commerce platform, and the products collection contains fields for views, sales, and ratings.
 // Write an aggregation query to rank products based on a weighted formula where sales have a weight of 50%, ratings 30%, and views 20%.
@@ -1391,16 +1391,16 @@ db.products.aggregate([
 
 db.interactions.insertMany([
   { userId: "U1", eventType: "viewPage", timestamp: new Date("2023-09-01T08:00:00Z") },
-  { userId: "U1", eventType: "click",    timestamp: new Date("2023-09-01T08:05:00Z") },
+  { userId: "U1", eventType: "click", timestamp: new Date("2023-09-01T08:05:00Z") },
   { userId: "U1", eventType: "viewPage", timestamp: new Date("2023-09-01T08:10:00Z") },
   { userId: "U1", eventType: "purchase", timestamp: new Date("2023-09-01T08:20:00Z") },
-  { userId: "U1", eventType: "click",    timestamp: new Date("2023-09-01T08:25:00Z") },
+  { userId: "U1", eventType: "click", timestamp: new Date("2023-09-01T08:25:00Z") },
   { userId: "U1", eventType: "viewPage", timestamp: new Date("2023-09-01T08:40:00Z") },
   { userId: "U2", eventType: "viewPage", timestamp: new Date("2023-09-01T08:00:00Z") },
   { userId: "U2", eventType: "purchase", timestamp: new Date("2023-09-01T08:15:00Z") },
   { userId: "U2", eventType: "viewPage", timestamp: new Date("2023-09-01T08:35:00Z") },
-  { userId: "U2", eventType: "click",    timestamp: new Date("2023-09-01T08:50:00Z") },
-  { userId: "U2", eventType: "click",    timestamp: new Date("2023-09-01T09:00:00Z") }
+  { userId: "U2", eventType: "click", timestamp: new Date("2023-09-01T08:50:00Z") },
+  { userId: "U2", eventType: "click", timestamp: new Date("2023-09-01T09:00:00Z") }
 ]);
 
 
@@ -1423,11 +1423,11 @@ db.interactions.aggregate([
       }
     }
   }
-  ]);
+]);
 
-  
-  // Main Solution
-  db.interactions.aggregate([
+
+// Main Solution
+db.interactions.aggregate([
   { $sort: { userId: 1, timestamp: 1 } },
   {
     $setWindowFields: {
@@ -1447,7 +1447,7 @@ db.interactions.aggregate([
   {
     $addFields: {
       last30Minutes: {
-        $subtract: ["$timestamp", 30* 60 * 1000]
+        $subtract: ["$timestamp", 30 * 60 * 1000]
       }
     }
   }
@@ -1517,4 +1517,158 @@ db.interactions.aggregate([
       },
     },
   },
-  ]);
+]);
+
+
+// https://devpress.csdn.net/mongodb/6313bcf426059229d1c7fbba.html
+
+db.calendar.insertMany([
+  /* 1 createdAt:3/17/2021, 7:27:28 PM*/
+  {
+    _id: ObjectId("60520ac8479cd440a079c271"),
+    dos: ISODate("2021-01-15T00:00:00.000+05:30"),
+  },
+
+  /* 2 createdAt:3/17/2021, 7:27:28 PM*/
+  {
+    _id: ObjectId("60520ac8479cd440a079c272"),
+    dos: ISODate("2021-03-03T00:00:00.000+05:30"),
+  },
+
+  /* 3 createdAt:3/17/2021, 7:27:28 PM*/
+  {
+    _id: ObjectId("60520ac8479cd440a079c273"),
+    dos: ISODate("2021-02-14T00:00:00.000+05:30"),
+  },
+
+  /* 4 createdAt:3/17/2021, 7:27:28 PM*/
+  {
+    _id: ObjectId("60520ac8479cd440a079c274"),
+    dos: ISODate("2021-01-26T00:00:00.000+05:30"),
+  },
+
+  /* 5 createdAt:3/17/2021, 7:27:28 PM*/
+  {
+    _id: ObjectId("60520ac8479cd440a079c275"),
+    dos: ISODate("2021-02-28T00:00:00.000+05:30"),
+  },
+
+  /* 6 createdAt:3/17/2021, 7:27:28 PM*/
+  {
+    _id: ObjectId("60520ac8479cd440a079c276"),
+    dos: ISODate("2021-08-15T00:00:00.000+05:30"),
+  },
+
+  /* 7 createdAt:3/17/2021, 7:27:28 PM*/
+  {
+    _id: ObjectId("60520ac8479cd440a079c277"),
+    dos: ISODate("2021-10-02T00:00:00.000+05:30"),
+  },
+]);
+
+// Solution # 1
+
+db.calendar.aggregate([
+  // Put your match stage here.
+  {
+    $group: {
+      _id: { $month: "$dos" },
+      count: { $sum: 1 },
+    },
+  },
+  {
+    $group: {
+      _id: null,
+      array: { $push: "$$ROOT" },
+    },
+  },
+  {
+    $addFields: {
+      array: {
+        $map: {
+          input: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+          as: "month",
+          in: {
+            $cond: {
+              if: { $in: ["$$month", "$array._id"] },
+              then: {
+                $arrayElemAt: [
+                  "$array",
+                  { $indexOfArray: ["$array._id", "$$month"] },
+                ],
+              },
+              else: {
+                _id: "$$month",
+                count: 0,
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  { $unwind: "$array" },
+  {
+    $sort: { "array._id": 1 },
+  },
+  {
+    $project: {
+      _id: 0,
+      count: "$array.count",
+      month: "$array._id",
+    },
+  },
+]);
+
+// Solution # 2
+
+db.calendar.aggregate([
+  // Put your match stage here.
+  {
+    $group: {
+      _id: { $month: "$dos" },
+      count: { $sum: 1 },
+    },
+  },
+  {
+    $group: {
+      _id: null,
+      array: { $push: "$$ROOT" },
+    },
+  },
+  {
+    $addFields: {
+      array: {
+        $map: {
+          input: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+          as: "month",
+          in: {
+            $let: {
+              vars: {
+                index: { $indexOfArray: ["$array._id", "$$month"] },
+              },
+              in: {
+                $cond: [
+                  { $gt: ["$$index", -1] },
+                  { $arrayElemAt: ["$array", "$$index"] },
+                  { _id: "$$month", count: 0 },
+                ],
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  { $unwind: "$array" },
+  {
+    $sort: { "array._id": 1 },
+  },
+  {
+    $project: {
+      _id: 0,
+      count: "$array.count",
+      month: "$array._id",
+    },
+  },
+]);
