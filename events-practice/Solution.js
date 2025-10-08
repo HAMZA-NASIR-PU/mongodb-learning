@@ -148,3 +148,26 @@ db.events
     ],
   })
   .sort({ startDate: 1 });
+
+
+// Another Solution
+
+db.events.find({
+  $and: [
+    {
+      startDate: { $lt: ISODate("2024-04-01T00:00:00Z") },
+    },
+    {
+      endDate: { $gte: ISODate("2024-03-01T00:00:00Z") },
+    },
+  ],
+});
+
+db.events.aggregate([
+  {
+    $match: {
+      startDate: { $lt: ISODate("2024-04-01T00:00:00Z") },
+      endDate: { $gte: ISODate("2024-03-01T00:00:00Z") },
+    },
+  },
+]);
