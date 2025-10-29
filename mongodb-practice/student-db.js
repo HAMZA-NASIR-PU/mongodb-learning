@@ -367,11 +367,13 @@ db.scores.aggregate([
 ]);
 
 
-db.students.drop();
+db.scores.drop();
 
 
 
-//You have a students collection where each student has an array of exams. Each exam contains a subject and score. Write a MongoDB query to calculate the average score of each student across all exams using the $let operator, and return the student name along with their average score in the output.
+// You have a students collection where each student has an array of exams. 
+// Each exam contains a subject and score. Write a MongoDB query to calculate the average score of each student across all exams using the $let operator, 
+// and return the student name along with their average score in the output.
 
 db.students.insertMany([
     {
